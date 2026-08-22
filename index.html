@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Factoriozinho</title>
+<link rel="stylesheet" href="src/css/menu.css">
+<link rel="stylesheet" href="src/css/game.css">
+</head>
+<body>
+
+<!-- Fundo animado (esteiras rolando) -->
+<canvas id="bg-canvas"></canvas>
+<div id="vignette"></div>
+
+<!-- ====================== TELA: MENU PRINCIPAL ====================== -->
+<section class="screen is-active" data-screen="main">
+  <div class="title-block">
+    <h1 class="game-title">
+      <span class="t-1">FACTORIO</span><span class="t-2">ZINHO</span>
+    </h1>
+    <p class="tagline">colete &middot; fabrique &middot; automatize</p>
+  </div>
+
+  <nav class="menu-list" id="main-menu">
+    <button class="menu-item" data-action="new">
+      <span class="mi-icon">▶</span>
+      <span class="mi-text"><b>Iniciar Jogo</b><small>Criar um mundo novo</small></span>
+    </button>
+    <button class="menu-item" data-action="load">
+      <span class="mi-icon">💾</span>
+      <span class="mi-text"><b>Carregar Jogo</b><small>Continuar de onde parou</small></span>
+    </button>
+    <button class="menu-item" data-action="settings">
+      <span class="mi-icon">⚙</span>
+      <span class="mi-text"><b>Configurações</b><small>Áudio, vídeo e jogo</small></span>
+    </button>
+    <button class="menu-item" data-action="help">
+      <span class="mi-icon">?</span>
+      <span class="mi-text"><b>Como Jogar</b><small>Controles e primeiros passos</small></span>
+    </button>
+    <button class="menu-item" data-action="credits">
+      <span class="mi-icon">★</span>
+      <span class="mi-text"><b>Créditos</b><small>Inspirações do projeto</small></span>
+    </button>
+    <button class="menu-item is-quit" data-action="quit">
+      <span class="mi-icon">✕</span>
+      <span class="mi-text"><b>Sair</b><small>Fechar o jogo</small></span>
+    </button>
+  </nav>
+
+  <footer class="version-bar">
+    <span id="version-label">v0.1.0 &mdash; Fase 0</span>
+    <span class="dot">&middot;</span>
+    <span>um passatempo</span>
+  </footer>
+</section>
+
+<!-- ====================== TELA: NOVO JOGO ====================== -->
+<section class="screen" data-screen="new">
+  <div class="panel">
+    <header class="panel-head">
+      <h2>Novo Mundo</h2>
+      <button class="btn-back" data-action="back">← Voltar</button>
+    </header>
+
+    <div class="panel-body">
+      <div class="field">
+        <label for="world-name">Nome do mundo</label>
+        <input type="text" id="world-name" maxlength="24" placeholder="Fábrica do Vandré">
+      </div>
+
+      <div class="field">
+        <label for="world-seed">Semente (seed)</label>
+        <div class="row">
+          <input type="text" id="world-seed" maxlength="16" placeholder="aleatória">
+          <button class="btn-small" id="btn-reroll" title="Sortear nova semente">🎲 Sortear</button>
+        </div>
+        <p class="hint">A mesma semente sempre gera o mesmo mapa.</p>
+      </div>
+
+      <div class="field">
+        <label>Tamanho do mundo</label>
+        <div class="seg" data-seg="worldSize">
+          <button data-value="small">Pequeno</button>
+          <button data-value="medium" class="is-on">Médio</button>
+          <button data-value="large">Grande</button>
+          <button data-value="infinite">Infinito</button>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Ritmo de jogo</label>
+        <div class="seg" data-seg="mode">
+          <button data-value="relaxed" class="is-on">Relaxado</button>
+          <button data-value="normal">Padrão</button>
+          <button data-value="challenge">Desafio</button>
+        </div>
+        <p class="hint" id="mode-hint">Recursos abundantes, produção rápida, sem ameaças. Ideal para construir em paz.</p>
+      </div>
+
+      <div class="field field-inline">
+        <label for="opt-enemies">Ameaças no mapa</label>
+        <label class="switch"><input type="checkbox" id="opt-enemies"><span></span></label>
+      </div>
+      <div class="field field-inline">
+        <label for="opt-tutorial">Dicas de tutorial</label>
+        <label class="switch"><input type="checkbox" id="opt-tutorial" checked><span></span></label>
+      </div>
+    </div>
+
+    <footer class="panel-foot">
+      <button class="btn-primary" id="btn-create">Criar Mundo</button>
+    </footer>
+  </div>
+</section>
+
+<!-- ====================== TELA: CARREGAR ====================== -->
+<section class="screen" data-screen="load">
+  <div class="panel">
+    <header class="panel-head">
+      <h2>Carregar Jogo</h2>
+      <button class="btn-back" data-action="back">← Voltar</button>
+    </header>
+    <div class="panel-body">
+      <div id="slot-list" class="slot-list"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ====================== TELA: CONFIGURAÇÕES ====================== -->
+<section class="screen" data-screen="settings">
+  <div class="panel">
+    <header class="panel-head">
+      <h2>Configurações</h2>
+      <button class="btn-back" data-action="back">← Voltar</button>
+    </header>
+
+    <nav class="tabs" id="settings-tabs">
+      <button class="is-on" data-tab="audio">Áudio</button>
+      <button data-tab="video">Vídeo</button>
+      <button data-tab="game">Jogo</button>
+      <button data-tab="controls">Controles</button>
+    </nav>
+
+    <div class="panel-body">
+      <!-- Áudio -->
+      <div class="tab-page is-active" data-page="audio">
+        <div class="field field-slider">
+          <label for="s-master">Volume geral <output id="o-master"></output></label>
+          <input type="range" id="s-master" min="0" max="100" data-setting="volumeMaster">
+        </div>
+        <div class="field field-slider">
+          <label for="s-music">Música <output id="o-music"></output></label>
+          <input type="range" id="s-music" min="0" max="100" data-setting="volumeMusic">
+        </div>
+        <div class="field field-slider">
+          <label for="s-sfx">Efeitos sonoros <output id="o-sfx"></output></label>
+          <input type="range" id="s-sfx" min="0" max="100" data-setting="volumeSfx">
+        </div>
+        <div class="field field-inline">
+          <label for="s-mute">Silenciar tudo</label>
+          <label class="switch"><input type="checkbox" id="s-mute" data-setting="muted"><span></span></label>
+        </div>
+      </div>
+
+      <!-- Vídeo -->
+      <div class="tab-page" data-page="video">
+        <div class="field field-inline">
+          <label for="s-fullscreen">Tela cheia</label>
+          <label class="switch"><input type="checkbox" id="s-fullscreen" data-setting="fullscreen"><span></span></label>
+        </div>
+        <div class="field field-slider">
+          <label for="s-uiscale">Escala da interface <output id="o-uiscale"></output></label>
+          <input type="range" id="s-uiscale" min="75" max="150" step="5" data-setting="uiScale">
+        </div>
+        <div class="field field-inline">
+          <label for="s-fps">Mostrar FPS</label>
+          <label class="switch"><input type="checkbox" id="s-fps" data-setting="showFps"><span></span></label>
+        </div>
+        <div class="field field-inline">
+          <label for="s-grid">Mostrar grade de construção</label>
+          <label class="switch"><input type="checkbox" id="s-grid" data-setting="showGrid"><span></span></label>
+        </div>
+        <div class="field field-inline">
+          <label for="s-bg">Fundo animado no menu</label>
+          <label class="switch"><input type="checkbox" id="s-bg" data-setting="animatedBg"><span></span></label>
+        </div>
+      </div>
+
+      <!-- Jogo -->
+      <div class="tab-page" data-page="game">
+        <div class="field">
+          <label>Salvamento automático</label>
+          <div class="seg" data-seg="autosave">
+            <button data-value="0">Desligado</button>
+            <button data-value="2">2 min</button>
+            <button data-value="5" class="is-on">5 min</button>
+            <button data-value="10">10 min</button>
+          </div>
+        </div>
+        <div class="field field-inline">
+          <label for="s-tooltips">Dicas de contexto</label>
+          <label class="switch"><input type="checkbox" id="s-tooltips" data-setting="tooltips"><span></span></label>
+        </div>
+        <div class="field field-inline">
+          <label for="s-numbers">Números flutuantes ao coletar</label>
+          <label class="switch"><input type="checkbox" id="s-numbers" data-setting="floatingNumbers"><span></span></label>
+        </div>
+        <div class="field">
+          <label>Idioma</label>
+          <div class="seg" data-seg="language">
+            <button data-value="pt-BR" class="is-on">Português</button>
+            <button data-value="en" disabled>English (em breve)</button>
+          </div>
+        </div>
+        <div class="field">
+          <button class="btn-danger" id="btn-reset-settings">Restaurar padrões</button>
+        </div>
+      </div>
+
+      <!-- Controles -->
+      <div class="tab-page" data-page="controls">
+        <table class="keys">
+          <tr><td>Andar</td><td><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> ou setas</td></tr>
+          <tr><td>Coletar / interagir</td><td>segurar <kbd>Botão Esq.</kbd> ou <kbd>E</kbd></td></tr>
+          <tr><td>Construir</td><td><kbd>Botão Esq.</kbd> com item na mão</td></tr>
+          <tr><td>Girar construção</td><td><kbd>R</kbd></td></tr>
+          <tr><td>Remover construção</td><td><kbd>Botão Dir.</kbd></td></tr>
+          <tr><td>Barra rápida</td><td><kbd>1</kbd>&ndash;<kbd>8</kbd> ou roda do mouse</td></tr>
+          <tr><td>Inventário</td><td><kbd>Tab</kbd> ou <kbd>I</kbd></td></tr>
+          <tr><td>Pesquisa</td><td><kbd>T</kbd></td></tr>
+          <tr><td>Habilidades</td><td><kbd>K</kbd></td></tr>
+          <tr><td>Mapa</td><td><kbd>M</kbd></td></tr>
+          <tr><td>Pausar / menu</td><td><kbd>Esc</kbd></td></tr>
+        </table>
+        <p class="hint">Remapear teclas entra numa fase futura.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ====================== TELA: COMO JOGAR ====================== -->
+<section class="screen" data-screen="help">
+  <div class="panel">
+    <header class="panel-head">
+      <h2>Como Jogar</h2>
+      <button class="btn-back" data-action="back">← Voltar</button>
+    </header>
+    <div class="panel-body prose">
+      <p>Você chega num mundo vazio com uma picareta. O objetivo é sair da coleta
+      na mão e chegar numa fábrica que produz sozinha.</p>
+
+      <ol class="steps">
+        <li><b>Colete</b> madeira nas árvores e pedra nos pedregulhos.</li>
+        <li><b>Fabrique</b> um forno de pedra e uma perfuratriz a carvão.</li>
+        <li><b>Automatize</b>: a perfuratriz em cima da jazida alimenta o forno,
+            que transforma minério em placas.</li>
+        <li><b>Ligue tudo</b> com esteiras e braços mecânicos.</li>
+        <li><b>Pesquise</b>: fabrique frascos de ciência e coloque no laboratório
+            para desbloquear máquinas melhores.</li>
+        <li><b>Expanda</b>: ganhe níveis, gaste pontos de habilidade e compre o
+            terreno vizinho.</li>
+      </ol>
+
+      <p class="hint">Sem relógio, sem game over. É pra relaxar.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ====================== TELA: CRÉDITOS ====================== -->
+<section class="screen" data-screen="credits">
+  <div class="panel">
+    <header class="panel-head">
+      <h2>Créditos</h2>
+      <button class="btn-back" data-action="back">← Voltar</button>
+    </header>
+    <div class="panel-body prose">
+      <p>Projeto pessoal, feito por diversão. Ele mistura ideias de três jogos
+      que valem muito a pena jogar no original:</p>
+      <ul class="credits-list">
+        <li><b>Factorio</b> <small>(Wube Software)</small> — a base: esteiras,
+            cadeias de produção, pesquisa e automação.</li>
+        <li><b>Forager</b> <small>(HopFrog)</small> — nós de recurso que renascem,
+            XP, árvore de habilidades e expansão de terreno.</li>
+        <li><b>Autonauts</b> <small>(Denki)</small> — robôs que você ensina e o
+            clima relaxado, sem pressão.</li>
+      </ul>
+      <p class="hint">Factoriozinho não tem relação com esses estúdios. É um
+      exercício de hobby, inspirado neles.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ====================== O JOGO ====================== -->
+<div id="game-layer">
+  <canvas id="game-canvas"></canvas>
+
+  <div id="hud">
+    <div id="cursor-info"></div>
+    <div id="avisos"></div>
+    <div id="hotbar"></div>
+
+    <div id="minimapa" title="Clique ou aperte M para abrir o mapa">
+      <canvas id="minimapa-canvas" width="180" height="180"></canvas>
+      <span class="mm-tecla">M</span>
+    </div>
+    <div id="ajuda-teclas">
+      <kbd>WASD</kbd> andar &nbsp; <kbd>Clique</kbd> coletar / construir &nbsp;
+      <kbd>Dir.</kbd> remover &nbsp; <kbd>Shift+Clique</kbd> transferir tudo<br>
+      <kbd>E</kbd> mochila &nbsp; <kbd>M</kbd> mapa &nbsp; <kbd>R</kbd> girar &nbsp;
+      <kbd>Q</kbd> pegar na mão &nbsp; <kbd>1-8</kbd> barra &nbsp;
+      <kbd>Ctrl+roda</kbd> zoom &nbsp; <kbd>Esc</kbd> menu
+    </div>
+  </div>
+
+  <div id="janelas"></div>
+</div>
+
+<div id="mao-cursor"><canvas width="32" height="32"></canvas><span></span></div>
+
+<!-- ====================== DIÁLOGO DE CONFIRMAÇÃO ====================== -->
+<div class="modal" id="modal">
+  <div class="modal-box">
+    <p id="modal-text"></p>
+    <div class="modal-actions">
+      <button class="btn-ghost" id="modal-no">Cancelar</button>
+      <button class="btn-danger" id="modal-yes">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<!-- núcleo -->
+<script src="src/js/core/settings.js"></script>
+<script src="src/js/core/saves.js"></script>
+<!-- jogo -->
+<script src="src/js/game/data.js"></script>
+<script src="src/js/game/paleta.js"></script>
+<script src="src/js/game/rng.js"></script>
+<script src="src/js/game/sprites.js"></script>
+<script src="src/js/game/inventory.js"></script>
+<script src="src/js/game/world.js"></script>
+<script src="src/js/game/entities.js"></script>
+<script src="src/js/game/minimap.js"></script>
+<script src="src/js/game/player.js"></script>
+<script src="src/js/game/render.js"></script>
+<script src="src/js/game/input.js"></script>
+<script src="src/js/game/game.js"></script>
+<!-- interface -->
+<script src="src/js/ui/background.js"></script>
+<script src="src/js/ui/hud.js"></script>
+<script src="src/js/ui/menu.js"></script>
+<script src="src/js/main.js"></script>
+</body>
+</html>

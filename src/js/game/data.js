@@ -1,0 +1,242 @@
+/* ============================================================
+   Factoriozinho — Dados do jogo
+   Itens, receitas, estruturas, terreno e recursos.
+   É aqui que se mexe para balancear o jogo.
+   ============================================================ */
+
+(function (global) {
+  'use strict';
+
+  var TILE = 32;   // pixels por tile (padrão de toda a arte)
+
+  /* ---------------- terreno ---------------- */
+  var TERRAIN = {
+    WATER:  0,
+    SAND:   1,
+    GRASS:  2,
+    GRASS2: 3,
+    DIRT:   4,
+    ROCKY:  5,
+    VOID:   6      // fora do mundo — barreira intransponível
+  };
+
+  var TERRAIN_INFO = [
+    { id: 0, key: 'water',        nome: 'Água',          cor: '#2b5d78', cor2: '#356e8c', solido: true  },
+    { id: 1, key: 'sand',         nome: 'Areia',         cor: '#c9b27a', cor2: '#d6c08a', solido: false },
+    { id: 2, key: 'grass',        nome: 'Grama',         cor: '#4a7c3f', cor2: '#548a47', solido: false },
+    { id: 3, key: 'grass_dark',   nome: 'Mato',          cor: '#3d6a35', cor2: '#47773d', solido: false },
+    { id: 4, key: 'dirt',         nome: 'Terra',         cor: '#6b5334', cor2: '#775c3b', solido: false },
+    { id: 5, key: 'stone_ground', nome: 'Chão de pedra', cor: '#5c6068', cor2: '#666b73', solido: false },
+    { id: 6, key: 'void',         nome: 'Fim do mundo',  cor: '#0a0b0d', cor2: '#15171b', solido: true  }
+  ];
+
+  /* ---------------- recursos do mundo ---------------- */
+  var RES = {
+    NONE:    0,
+    TREE:    1,
+    ROCK:    2,
+    COAL:    3,
+    IRON:    4,
+    COPPER:  5,
+    STONE:   6,
+    GOLD:    7,
+    URANIUM: 8,
+    CLAY:    9,
+    SAND:   10,
+    SOIL:   11,
+    OIL:    12
+  };
+
+  /* emCima  = fica desenhado por cima do chão (jazida) em vez de ser um objeto
+     bloqueia = impede passagem
+     mao      = dá para coletar na mão (petróleo precisa de bomba) */
+  var RES_INFO = [
+    null,
+    { id: 1,  key: 'tree',    nome: 'Árvore',              item: 'wood',        tempo: 0.65, bloqueia: true,  emCima: false, mao: true,  sprite: 'world/tree' },
+    { id: 2,  key: 'rock',    nome: 'Pedregulho',          item: 'stone',       tempo: 0.90, bloqueia: true,  emCima: false, mao: true,  sprite: 'world/rock' },
+    { id: 3,  key: 'coal',    nome: 'Jazida de carvão',    item: 'coal',        tempo: 1.00, bloqueia: false, emCima: true,  mao: true,  sprite: 'tiles/ore_coal',    cor: '#2b2f36' },
+    { id: 4,  key: 'iron',    nome: 'Jazida de ferro',     item: 'iron_ore',    tempo: 1.20, bloqueia: false, emCima: true,  mao: true,  sprite: 'tiles/ore_iron',    cor: '#8d97a5' },
+    { id: 5,  key: 'copper',  nome: 'Jazida de cobre',     item: 'copper_ore',  tempo: 1.20, bloqueia: false, emCima: true,  mao: true,  sprite: 'tiles/ore_copper',  cor: '#b3603f' },
+    { id: 6,  key: 'stone',   nome: 'Jazida de pedra',     item: 'stone',       tempo: 1.00, bloqueia: false, emCima: true,  mao: true,  sprite: 'tiles/ore_stone',   cor: '#8a8f98' },
+    { id: 7,  key: 'gold',    nome: 'Jazida de ouro',      item: 'gold_ore',    tempo: 1.60, bloqueia: false, emCima: true,  mao: true,  sprite: 'tiles/ore_gold',    cor: '#d4a017' },
+    { id: 8,  key: 'uranium', nome: 'Jazida de urânio',    item: 'uranium_ore', tempo: 2.20, bloqueia: false, emCima: true,  mao: true,  sprite: 'tiles/ore_uranium', cor: '#5fd45f' },
+    { id: 9,  key: 'clay',    nome: 'Depósito de argila',  item: 'clay',        tempo: 0.80, bloqueia: false, emCima: true,  mao: true,  sprite: 'tiles/ore_clay',    cor: '#a8674a' },
+    { id: 10, key: 'sand',    nome: 'Depósito de areia',   item: 'sand',        tempo: 0.70, bloqueia: false, emCima: true,  mao: true,  sprite: 'tiles/ore_sand',    cor: '#e0cb92' },
+    { id: 11, key: 'soil',    nome: 'Depósito de terra',   item: 'soil',        tempo: 0.70, bloqueia: false, emCima: true,  mao: true,  sprite: 'tiles/ore_soil',    cor: '#7a5a38' },
+    { id: 12, key: 'oil',     nome: 'Poço de petróleo',    item: 'crude_oil',   tempo: 3.00, bloqueia: false, emCima: true,  mao: false, sprite: 'tiles/ore_oil',     cor: '#1f2026',
+      aviso: 'Precisa de bomba de petróleo — ainda não existe.' }
+  ];
+
+  /* ---------------- itens ----------------
+     stack = quantos cabem numa pilha
+     fuel  = segundos de queima numa máquina a combustível
+     forma/cor = desenho provisório enquanto não há sprite
+  */
+  var STACK = 100;   // padrão de pilha para tudo
+
+  var ITEMS = {
+    /* --- brutos --- */
+    wood:        { nome: 'Madeira',              stack: STACK, fuel: 4,  cor: '#c07a4a', forma: 'tora' },
+    stone:       { nome: 'Pedra',                stack: STACK, cor: '#9aa3af', forma: 'pedra' },
+    coal:        { nome: 'Carvão',               stack: STACK, fuel: 8,  cor: '#3a3f47', forma: 'pedra' },
+    iron_ore:    { nome: 'Minério de ferro',     stack: STACK, cor: '#8d97a5', forma: 'pedra' },
+    copper_ore:  { nome: 'Minério de cobre',     stack: STACK, cor: '#b3603f', forma: 'pedra' },
+    gold_ore:    { nome: 'Minério de ouro',      stack: STACK, cor: '#d4a017', forma: 'pedra' },
+    uranium_ore: { nome: 'Minério de urânio',    stack: STACK, cor: '#5fd45f', forma: 'pedra' },
+    clay:        { nome: 'Argila',               stack: STACK, cor: '#a8674a', forma: 'pedra' },
+    sand:        { nome: 'Areia',                stack: STACK, cor: '#d9c48a', forma: 'po' },
+    soil:        { nome: 'Terra',                stack: STACK, cor: '#6b4f34', forma: 'po' },
+    crude_oil:   { nome: 'Petróleo bruto',       stack: STACK, fuel: 20, cor: '#25262c', forma: 'po' },
+
+    /* --- processados --- */
+    iron_plate:  { nome: 'Placa de ferro',       stack: STACK, cor: '#b6bec8', forma: 'placa' },
+    copper_plate:{ nome: 'Placa de cobre',       stack: STACK, cor: '#e08a5a', forma: 'placa' },
+    gold_plate:  { nome: 'Placa de ouro',        stack: STACK, cor: '#f0c850', forma: 'placa' },
+    glass:       { nome: 'Vidro',                stack: STACK, cor: '#a8d8e8', forma: 'placa' },
+    stone_brick: { nome: 'Tijolo de pedra',      stack: STACK, cor: '#8a8f98', forma: 'tijolo' },
+    iron_gear:   { nome: 'Engrenagem de ferro',  stack: STACK, cor: '#98a2ad', forma: 'engrenagem' },
+
+    /* --- ferramentas ---
+       Por enquanto só existem como item (a arte já é do Vandré).
+       A regra de "só minera pedra com picareta" entra na fase de progressão. */
+    wood_pickaxe:  { nome: 'Picareta de madeira', stack: STACK, nivel: 1, cor: '#c07a4a', forma: 'ferramenta' },
+    stone_pickaxe: { nome: 'Picareta de pedra',   stack: STACK, nivel: 2, cor: '#9aa3af', forma: 'ferramenta' },
+    iron_pickaxe:  { nome: 'Picareta de ferro',   stack: STACK, nivel: 3, cor: '#b6bec8', forma: 'ferramenta' },
+    gold_pickaxe:  { nome: 'Picareta de ouro',    stack: STACK, nivel: 4, cor: '#f0c850', forma: 'ferramenta' },
+
+    /* --- construções --- */
+    stone_furnace:{ nome: 'Forno de pedra',      stack: STACK, constroi: 'stone_furnace', cor: '#7d8390', forma: 'predio' },
+    burner_drill: { nome: 'Mineradora a carvão', stack: STACK, constroi: 'burner_drill',  cor: '#c98a3a', forma: 'predio' },
+    wooden_chest: { nome: 'Baú de madeira',      stack: STACK, constroi: 'wooden_chest',  cor: '#a06a3c', forma: 'predio' },
+    transport_belt:{ nome: 'Esteira',            stack: STACK, constroi: 'transport_belt', cor: '#6b7280', forma: 'esteira' },
+    inserter:     { nome: 'Inseridor',           stack: STACK, constroi: 'inserter',      cor: '#c4a33a', forma: 'braco' }
+  };
+
+  /* ---------------- receitas de mão ---------------- */
+  var HAND_RECIPES = [
+    { saida: 'wood_pickaxe',   qtd: 1, tempo: 1.0, custo: { wood: 5 } },
+    { saida: 'stone_pickaxe',  qtd: 1, tempo: 1.0, custo: { wood: 2, stone: 3 } },
+    { saida: 'iron_pickaxe',   qtd: 1, tempo: 1.5, custo: { wood: 2, iron_plate: 3 } },
+    { saida: 'gold_pickaxe',   qtd: 1, tempo: 2.0, custo: { wood: 2, gold_plate: 3 } },
+    { saida: 'stone_furnace',  qtd: 1, tempo: 1.0, custo: { stone: 5 } },
+    { saida: 'wooden_chest',   qtd: 1, tempo: 0.5, custo: { wood: 4 } },
+    { saida: 'iron_gear',      qtd: 1, tempo: 0.5, custo: { iron_plate: 2 } },
+    { saida: 'transport_belt', qtd: 2, tempo: 0.5, custo: { iron_gear: 1, iron_plate: 1 } },
+    { saida: 'inserter',       qtd: 1, tempo: 0.5, custo: { iron_gear: 1, iron_plate: 1, copper_plate: 1 } },
+    { saida: 'burner_drill',   qtd: 1, tempo: 2.0, custo: { iron_gear: 3, iron_plate: 3, stone_furnace: 1 } }
+  ];
+
+  /* ---------------- receitas de fundição (forno) ---------------- */
+  var SMELTING = {
+    iron_ore:   { saida: 'iron_plate',   qtd: 1, tempo: 3.2 },
+    copper_ore: { saida: 'copper_plate', qtd: 1, tempo: 3.2 },
+    gold_ore:   { saida: 'gold_plate',   qtd: 1, tempo: 4.5 },
+    stone:      { saida: 'stone_brick',  qtd: 1, tempo: 3.2 },
+    sand:       { saida: 'glass',        qtd: 1, tempo: 3.0 }
+  };
+
+  /* ---------------- estruturas ---------------- */
+  var BUILDINGS = {
+    stone_furnace: {
+      nome: 'Forno de pedra',
+      tipo: 'furnace',
+      w: 2, h: 2,
+      giravel: false,
+      slots: { fuel: 1, input: 1, output: 1 },
+      cor: '#6f747f', cor2: '#565b64',
+      dica: 'Queima combustível para transformar minério em placa.'
+    },
+    burner_drill: {
+      nome: 'Mineradora a carvão',
+      tipo: 'drill',
+      w: 2, h: 2,
+      giravel: true,
+      velocidade: 0.45,          // itens por segundo
+      slots: { fuel: 1, output: 1 },
+      cor: '#8a6a3a', cor2: '#6d5330',
+      dica: 'Fica em cima da jazida e joga o minério no que estiver na frente.'
+    },
+    wooden_chest: {
+      nome: 'Baú de madeira',
+      tipo: 'chest',
+      w: 1, h: 1,
+      giravel: false,
+      slots: { geral: 16 },
+      cor: '#8a5a34', cor2: '#6d4728',
+      dica: 'Guarda 16 pilhas de itens.'
+    },
+    transport_belt: {
+      nome: 'Esteira',
+      tipo: 'belt',
+      w: 1, h: 1,
+      giravel: true,
+      velocidade: 2.0,           // tiles por segundo
+      capacidade: 4,             // itens que cabem em cima de 1 tile
+      slots: {},
+      cor: '#6b7280', cor2: '#4b5159',
+      dica: 'Leva os itens sozinha, na direção da seta. Não precisa de combustível.'
+    },
+    inserter: {
+      nome: 'Inseridor',
+      tipo: 'inserter',
+      w: 1, h: 1,
+      giravel: true,
+      velocidade: 1.0,           // itens por segundo
+      gastoCombustivel: 0.16,    // queima devagar: 1 carvão dura ~50s de trabalho
+      slots: { fuel: 1 },
+      cor: '#c4a33a', cor2: '#957a22',
+      dica: 'Pega do que está ATRÁS e põe no que está NA FRENTE (seta). Queima combustível.'
+    }
+  };
+
+  /* ---------------- constantes de jogo ---------------- */
+  var CHUNK = 32;
+  var MUNDO_CHUNKS = 10;                       // o mundo tem 10x10 chunks
+
+  var CONFIG = {
+    TILE: TILE,
+    CHUNK: CHUNK,
+    MUNDO_CHUNKS: MUNDO_CHUNKS,
+    MUNDO_TILES: MUNDO_CHUNKS * CHUNK,         // 320 tiles de lado
+    MUNDO_MIN: -(MUNDO_CHUNKS * CHUNK) / 2,    // -160
+    MUNDO_MAX: (MUNDO_CHUNKS * CHUNK) / 2 - 1, //  159
+    STACK: STACK,
+    INV_SIZE: 40,
+    HOTBAR_SIZE: 8,
+    REACH: 4.2,
+    PLAYER_SPEED: 5.2,
+    PLAYER_HITBOX: 0.55,
+    ZOOM_MIN: 1,
+    ZOOM_MAX: 4,
+    ZOOM_DEFAULT: 2,
+    DROP_PICKUP_RADIUS: 1.4
+  };
+
+  function item(id) { return ITEMS[id] || null; }
+  function itemNome(id) { var i = ITEMS[id]; return i ? i.nome : id; }
+  function stackMax(id) { var i = ITEMS[id]; return i ? (i.stack || STACK) : STACK; }
+  function fuelValue(id) { var i = ITEMS[id]; return (i && i.fuel) || 0; }
+  function building(id) { return BUILDINGS[id] || null; }
+  function resInfo(id) { return RES_INFO[id] || null; }
+  function terrainInfo(id) { return TERRAIN_INFO[id] || TERRAIN_INFO[2]; }
+
+  global.FZ = global.FZ || {};
+  global.FZ.Data = {
+    CONFIG: CONFIG,
+    TERRAIN: TERRAIN,
+    TERRAIN_INFO: TERRAIN_INFO,
+    RES: RES,
+    RES_INFO: RES_INFO,
+    ITEMS: ITEMS,
+    HAND_RECIPES: HAND_RECIPES,
+    SMELTING: SMELTING,
+    BUILDINGS: BUILDINGS,
+    item: item,
+    itemNome: itemNome,
+    stackMax: stackMax,
+    fuelValue: fuelValue,
+    building: building,
+    resInfo: resInfo,
+    terrainInfo: terrainInfo
+  };
+})(window);
