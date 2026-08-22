@@ -50,6 +50,16 @@ servidor local com o Node e abre o jogo em `http://localhost:8080`).
 | `src/js/ui/` | Menu, HUD, inventário, mapa. |
 | `src/js/core/` | Configurações e sistema de save. |
 | `servidor.js` · `jogar.bat` | Servidor local opcional. |
+| `testes/` · `testar.bat` | Bateria de testes que roda a lógica do jogo sem abrir o navegador. |
+
+---
+
+## 🧪 Testes
+
+Duplo clique no **`testar.bat`** (ou `node testes/rodar-tudo.js`). Ele roda 9
+conjuntos de testes que verificam o mundo, os recursos finitos, o inventário, o
+forno, a mineradora, as esteiras de duas faixas, os inseridores e as curvas — tudo
+sem precisar abrir o jogo.
 
 ---
 

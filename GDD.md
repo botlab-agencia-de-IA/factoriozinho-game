@@ -4,7 +4,10 @@
 > reescrever à vontade — eu leio este arquivo antes de mexer no código. Se algo
 > aqui estiver diferente do jogo, o arquivo ganha.
 >
-> Última atualização: 21/08/2026 · Versão do doc: **0.2**
+> Última atualização: 22/08/2026 · Versão do doc: **0.8** · Jogo: **v0.8.0**
+>
+> 📦 Código no GitHub: **botlab-agencia-de-IA/factoriozinho-game** (privado)
+> 🧪 Para testar sem abrir o jogo: duplo clique no `testar.bat`
 
 ---
 
@@ -481,6 +484,24 @@ factoriozinho/
 - [ ] **Fase 9 — Inimigos**, e depois PvP.
 - [ ] **Fase 10 — A nave**: a cadeia final e o fim do jogo.
 - [ ] **Fase 11 — Polimento**: som, tutorial, modos de jogo, XP.
+
+---
+
+## 9.5 📍 Onde paramos
+
+**22/08/2026 — v0.8.0, Fase 2 concluída.**
+
+Funcionando: mundo finito por semente, coleta manual, inventário e fabricação,
+construção, forno, mineradora, baú, **esteiras de duas faixas com side-load e curva
+automática**, **inseridores**, minimapa e mapa, save em 5 slots. As 4 picaretas
+existem como item com a arte pronta, mas ainda **não fazem nada**.
+
+**O próximo passo do roadmap é a Fase 3 (Montadora)** — mas confirmar com o Vandré
+antes, porque ele costuma testar e trazer ajustes primeiro.
+
+Na fila, na ordem que ele definiu: progressão de picaretas (§3.1) → matemática do
+jogo (§3.2) → diamante → sobrevivência. Os problemas conhecidos estão em §8.5, e as
+cores que faltam estão no `CORES.md`.
 
 ---
 
