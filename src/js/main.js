@@ -5,8 +5,8 @@
 (function (global) {
   'use strict';
 
-  var VERSION = '0.8.0';
-  var PHASE = 'Fase 2 — Curvas e faixas ajustadas';
+  var VERSION = '0.8.4';
+  var PHASE = 'Fase 2 — mapa, painéis e desempenho';
 
   function boot() {
     global.FZ.Settings.load();
@@ -21,6 +21,8 @@
       s.LISTA.forEach(function (k) { if (s.get(k)) n++; });
       console.log('%cSprites: ' + n + '/' + s.LISTA.length + ' carregados',
         'color:#6fc26b', '— use FZ.Sprites.status() para ver a lista');
+      // o chão fica guardado pronto por chunk: com arte nova, repintar
+      if (global.FZ.Render) global.FZ.Render.limparCacheChao();
     });
 
     var label = document.getElementById('version-label');

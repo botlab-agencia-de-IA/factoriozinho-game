@@ -4,7 +4,7 @@
 > reescrever à vontade — eu leio este arquivo antes de mexer no código. Se algo
 > aqui estiver diferente do jogo, o arquivo ganha.
 >
-> Última atualização: 02/09/2026 · Versão do doc: **0.8.3** · Jogo: **v0.8.3**
+> Última atualização: 02/09/2026 · Versão do doc: **0.8.4** · Jogo: **v0.8.4**
 >
 > 📦 Código no GitHub: **botlab-agencia-de-IA/factoriozinho-game** (privado)
 > 🧪 Para testar sem abrir o jogo: duplo clique no `testar.bat`
@@ -144,6 +144,8 @@ COLETAR ──► FABRICAR ──► AUTOMATIZAR ──► PRODUZIR MAIS ─┘
 ### 5.2 Inventário
 - Grade de slots (40), cada slot com item + quantidade (pilha).
 - **Barra rápida (hotbar)** = os 8 primeiros slots, sempre visíveis na tela.
+  Escolhe-se pelo **número (1–8) ou clicando no slot** — a roda do mouse **não**
+  troca de slot, ela é só do zoom.
 - Pegar/soltar pilha com o mouse (clique esquerdo pega tudo, direito pega metade).
 
 ### 5.3 Mundo e mapa
@@ -274,8 +276,9 @@ onde o combustível melhor vem depois na progressão:
 
 ### 5.8 Fabricação
 1. **Na mão** — painel de fabricação, com fila e tempo por item. As receitas ficam
-   separadas em **seções: Ferramentas, Estruturas e Itens** — picareta não fica no
-   meio de forno e baú. A seção de cada receita é o campo `cat` em `data.js`.
+   separadas em **seções: Ferramentas, Estruturas e Itens**, e a tela mostra **uma
+   seção por vez** — clica no botão da seção e a lista troca. A seção de cada
+   receita é o campo `cat` em `data.js`.
 2. **Forno** — funde minério em placa, queimando combustível.
 3. **Montadora** (futuro) — recebe ingredientes por esteira/inseridor e produz sozinha.
 
@@ -368,8 +371,8 @@ uma cadeia de produção, mas sem o intermediário artificial do frasco.
 | **Mapa** | **`M`** (ou clicar no minimapa) |
 | **Pegar na mão o que está sob o cursor** | **`Q`** |
 | Fabricar | `C` (ou a aba dentro do inventário) |
-| Barra rápida | `1`–`8`, roda do mouse, **ou clicar no slot** |
-| Zoom | `Ctrl` + roda, ou `+` / `-` |
+| Barra rápida | `1`–`8` **ou clicar no slot** (a roda não troca de slot) |
+| Zoom | **roda do mouse**, ou `+` / `-` |
 | Pausar / menu | `Esc` |
 
 ---
@@ -501,6 +504,39 @@ factoriozinho/
 
 ---
 
+## 8.3 ⚡ Desempenho do desenho
+
+O chão (terreno + jazida) é desenhado **por chunk, de um canvas guardado**: cada
+chunk de 32×32 tiles é pintado uma vez numa imagem de 32 px por tile, e o quadro
+faz **um `drawImage` por chunk**. Antes era um por tile, e no zoom mais aberto
+passavam de dois mil por quadro — era isso que travava o jogo quando se tirava o
+zoom. Medido pelo teste `13-desempenho-e-secoes.js`, numa tela de 1400×730:
+
+| zoom | desenhos por quadro | como era |
+|---|---|---|
+| 4 | 27 | ~90 |
+| 2 | 36 | ~300 |
+| 1 | 43 | ~2000 |
+
+Regras da coisa:
+- **Guarda no máximo 12 chunks** (cada um pesa ~4 MB); os que saem de vista são
+  descartados pelo menos usado.
+- Minerar **suja** o chunk, que é repintado no quadro seguinte — no máximo 2
+  repinturas por quadro, para uma fábrica grande não engasgar tudo de uma vez.
+- Trocar de mundo ou carregar a arte de verdade (PNGs) **limpa o cache inteiro**.
+- Como o zoom é sempre inteiro, esticar essa imagem cai certinho em cima do pixel.
+
+Junto disso, `World.idx()` **lembra do último chunk lido** (o desenho anda de tile
+em tile, então quase toda leitura cai no mesmo chunk da anterior) e o render varre
+a **lista de entidades** em vez de perguntar tile a tile se tem máquina ali. Só
+essas duas coisas cortaram o custo de leitura de 2,9 ms para 0,9 ms por quadro no
+pior caso.
+
+**Na tela tem um contador de fps** no canto de cima à esquerda, com o zoom do lado
+— é por ele que dá para dizer "travou" com número junto.
+
+---
+
 ## 8.4 ⚠️ Ao entregar: subir a versão no `index.html`
 
 O jogo abre por duplo clique (`file://`), e nesse modo o navegador **guarda o js e
@@ -553,7 +589,7 @@ regiões viraram células com centro sorteado e fronteira embaralhada por ruído
 
 ## 9.5 📍 Onde paramos
 
-**02/09/2026 — v0.8.3, Fase 2 concluída + mapa e painéis arrumados.**
+**02/09/2026 — v0.8.4, Fase 2 concluída + mapa, painéis e desempenho.**
 
 Funcionando: mundo finito por semente, coleta manual, inventário e fabricação,
 construção, forno, mineradora, baú, **esteiras de duas faixas com side-load e curva
@@ -564,7 +600,14 @@ O mapa não mostra mais o quadriculado dos chunks e as jazidas não nascem mais
 coladas umas nas outras (§5.3). O **inspetor** (§5.4) mostra, no canto direito da
 tela do jogo e também na janela do mapa, o que tem debaixo do cursor — o processo
 dentro do forno, o que a mineradora ainda tem para tirar, o conteúdo da jazida. A
-fabricação foi dividida em seções (§5.8).
+fabricação foi dividida em seções, uma por vez (§5.8).
+
+A **roda do mouse agora é só do zoom** (a barra rápida vai por número ou clique), o
+chão passou a ser desenhado por chunk guardado — o que resolveu o travamento no zoom
+aberto (§8.3) — e há um **contador de fps** no canto de cima à esquerda.
+
+**Falta fazer no mapa (`M`), combinado com ele:** dar zoom no mapa com a roda,
+para poder aproximar um canto e ver as estruturas daquele pedaço.
 
 **Mundos antigos salvos continuam abrindo, mas o mapa deles muda**: o save guarda só
 o que você mexeu, o resto é regerado — então as jazidas que você ainda não tocou
@@ -585,6 +628,7 @@ cores que faltam estão no `CORES.md`.
 
 | Data | O que mudou |
 |---|---|
+| 02/09/2026 | **v0.8.4** — **A roda do mouse virou só zoom** (sem `Ctrl`), e a barra rápida passou a ser escolhida só por número ou clique. **Contador de fps** no canto de cima à esquerda, com o zoom do lado. **O travamento no zoom aberto acabou** (§8.3): o chão agora é desenhado por chunk de um canvas guardado — 43 desenhos por quadro no zoom 1, contra ~2000 antes; junto, `World.idx()` passou a lembrar do último chunk e o render varre a lista de entidades em vez de perguntar tile a tile. A **fabricação passou a mostrar uma seção por vez**, com botões de Ferramentas / Estruturas / Itens. Novo teste `13-desempenho-e-secoes.js`, que conta os desenhos de um quadro com um canvas de mentira. **Combinado para depois: zoom no mapa do `M`.** |
 | 02/09/2026 | **v0.8.3** — Correções do teste dele. O **inspetor foi para o lugar certo**: canto direito da **tela do jogo**, embaixo do minimapa (antes eu só tinha posto na janela do mapa). A **tarja do meio do topo saiu**, e a **barra de progresso saiu de baixo das estruturas** — a progressão agora só aparece no painel. Descoberto que o navegador servia js e css **em cache** quando o jogo abre por duplo clique: todo script e css do `index.html` agora leva `?v=` (ver §8.4). Nas jazidas, entrou uma **faixa sem minério entre regiões vizinhas** (§5.3): minérios diferentes não nascem mais colados (encosto caiu de 5,4% para 0,04%) e as retas que sobravam sumiram; a cobertura caiu de ~19% para ~12% do mapa, com ~89 jazidas de 40+ tiles por mundo. A **fabricação virou três seções** — Ferramentas, Estruturas e Itens (§5.8). Novo teste `12-painel-no-jogo.js`. |
 | 02/09/2026 | **v0.8.2** — **Inspetor no mapa** (§5.4): passar o mouse por qualquer lugar do mapa mostra na coluna da direita, embaixo da legenda e com ícone, o que tem ali — a jazida com o quanto sobrou no quadrado e na mancha inteira, o forno com o que está fundindo e a barra de progresso, a mineradora com o total que ainda dá para tirar e quanto tempo falta, o baú com o conteúdo, a esteira com as duas faixas e o inseridor com o que está na mão. As barras andam sozinhas com o mouse parado. O texto de hover saiu do rodapé do mapa e virou esse painel. Novo teste `11-inspetor-do-mapa.js`. Registradas duas decisões dele: **areia, argila e terra vão deixar de ser jazidas** (§5.5, a definir) e o **`git push` passa a esperar a ordem dele**. |
 | 02/09/2026 | **v0.8.1** — Acabou o **quadriculado dos chunks no mapa** (§8.5): a região de minério deixou de ser o quadrado do chunk e virou uma célula com centro sorteado (estilo Voronoi), com o ponto de consulta embaralhado por duas ondas de ruído — uma grande que entorta a fronteira e uma miúda que solta ilhotas. As proporções passaram a ser repartidas por **área** de região, porque agora as regiões têm tamanhos diferentes. Novo teste `10-regioes.js`, que mede o quadriculado em número em vez de olhar a tela. Corrigido um teste frágil no `08` (procurava carvão numa semente e usava a coordenada em outra). Efeito colateral bom: sementes com começo pobre praticamente sumiram (era ~1 em 40, agora 0 em 120). |

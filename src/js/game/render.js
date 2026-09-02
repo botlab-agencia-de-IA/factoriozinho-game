@@ -20,6 +20,7 @@
   var canvas, ctx, largura = 0, altura = 0, dpr = 1;
   var tex = {};          // texturas provisórias já desenhadas
   var tempo = 0;
+  var CHUNK = D.CONFIG.CHUNK;
 
   /* ============================================================
      texturas provisórias
@@ -481,22 +482,26 @@
     /* --- objetos ordenados por Y, para o de baixo tapar o de cima --- */
     var lista = [];
     var esteiras = [];        // esteiras vão numa camada própria, rente ao chão
-    var vistas = {};
 
+    // árvores e pedregulhos: esses ainda são tile a tile, porque cada um
+    // é um desenho solto que entra na ordem de quem tapa quem
     for (var ty = y0; ty <= y1; ty++) {
       for (var tx = x0; tx <= x1; tx++) {
         var res = World.resAt(tx, ty);
-        if (res) {
-          var ri = D.resInfo(res);
-          if (ri && !ri.emCima) lista.push({ y: ty + 1, tipo: 'res', res: res, x: tx, ty: ty });
-        }
-        var e = World.entityAt(tx, ty);
-        if (e && !vistas[e.id]) {
-          vistas[e.id] = 1;
-          if (D.building(e.tipo).tipo === 'belt') esteiras.push(e);
-          else lista.push({ y: e.y + e.h, tipo: 'ent', e: e });
-        }
+        if (!res) continue;
+        var ri = D.resInfo(res);
+        if (ri && !ri.emCima) lista.push({ y: ty + 1, tipo: 'res', res: res, x: tx, ty: ty });
       }
+    }
+
+    // máquinas: varre a lista de entidades do mundo em vez de perguntar
+    // em cada tile se tem alguma coisa ali
+    var todas = World.todasEntidades();
+    for (var ei = 0; ei < todas.length; ei++) {
+      var e = todas[ei];
+      if (e.x + e.w <= x0 || e.x > x1 || e.y + e.h <= y0 || e.y > y1) continue;
+      if (D.building(e.tipo).tipo === 'belt') esteiras.push(e);
+      else lista.push({ y: e.y + e.h, tipo: 'ent', e: e });
     }
 
     /* Esteiras em DUAS passadas: primeiro todas as bases, depois todos os
@@ -543,34 +548,117 @@
     ctx.restore();
   }
 
-  function desenharChao(cam, x0, x1, y0, y1, s) {
-    for (var ty = y0; ty <= y1; ty++) {
-      for (var tx = x0; tx <= x1; tx++) {
-        var pos = paraTela(cam, tx, ty);
-        var px = Math.floor(pos.x), py = Math.floor(pos.y);
-        var w = Math.ceil(s) + 1;
+  /* ---------------- o chão, guardado por chunk ----------------
+     Chão e jazida de um chunk inteiro (32x32 tiles) são pintados uma
+     vez num canvas de 32px por tile e depois é UM drawImage por chunk
+     no quadro. Antes era um drawImage por tile: no zoom mais aberto
+     passavam de dois mil por quadro e o jogo travava.
+
+     Como o zoom é sempre inteiro, esticar essa imagem cai certinho
+     em cima do pixel — não borra nada. */
+
+  var cacheChao = {};        // "cx,cy" -> { canvas, uso, sujo }
+  var usoAtual = 0;
+  var CACHE_MAX = 12;        // ~4 MB cada; no zoom mais aberto cabem 6 na tela
+  var REDESENHOS_POR_QUADRO = 2;
+  var redesenhosNoQuadro = 0;
+
+  /** Um tile do chão mudou (minerou, a jazida sumiu): repintar o chunk. */
+  function sujarTile(x, y) {
+    var k = Math.floor(x / CHUNK) + ',' + Math.floor(y / CHUNK);
+    var c = cacheChao[k];
+    if (c) c.sujo = true;
+  }
+
+  function limparCacheChao() { cacheChao = {}; usoAtual = 0; }
+
+  function chaoDoChunk(cx, cy) {
+    var k = cx + ',' + cy;
+    var c = cacheChao[k];
+
+    if (c && !c.sujo) { c.uso = ++usoAtual; return c.canvas; }
+    if (c && c.sujo && redesenhosNoQuadro >= REDESENHOS_POR_QUADRO) {
+      c.uso = ++usoAtual;                 // repinta no próximo quadro
+      return c.canvas;
+    }
+
+    if (!c) {
+      var novo = novoCanvas(CHUNK * TILE, CHUNK * TILE);
+      c = cacheChao[k] = { canvas: novo.canvas, ctx: novo.ctx, uso: 0, sujo: true };
+      podarCacheChao();
+    }
+
+    pintarChunk(c.ctx, cx, cy);
+    c.sujo = false;
+    c.uso = ++usoAtual;
+    redesenhosNoQuadro++;
+    return c.canvas;
+  }
+
+  function pintarChunk(cc, cx, cy) {
+    var bx = cx * CHUNK, by = cy * CHUNK;
+    cc.clearRect(0, 0, CHUNK * TILE, CHUNK * TILE);
+
+    for (var iy = 0; iy < CHUNK; iy++) {
+      for (var ix = 0; ix < CHUNK; ix++) {
+        var tx = bx + ix, ty = by + iy;
+        var px = ix * TILE, py = iy * TILE;
 
         var t = World.terrainAt(tx, ty);
-        var info = D.terrainInfo(t);
-        var img = Sprites.get('tiles/' + info.key);
-        if (img) ctx.drawImage(img, px, py, w, w);
+        var img = Sprites.get('tiles/' + D.terrainInfo(t).key);
+        if (img) cc.drawImage(img, px, py, TILE, TILE);
         else {
           var v = Math.floor(R.hash2(tx, ty, 12345) * 4);
-          ctx.drawImage(tex['t' + t + '_' + v], px, py, w, w);
+          cc.drawImage(tex['t' + t + '_' + v], px, py, TILE, TILE);
         }
 
-        // jazida por cima do chão
         var res = World.resAt(tx, ty);
-        if (res) {
-          var ri = D.resInfo(res);
-          if (ri && ri.emCima) {
-            var qtd = World.amountAt(tx, ty);
-            var nivel = qtd > 600 ? 0 : (qtd > 200 ? 1 : 2);
-            var oimg = Sprites.get(ri.sprite);
-            if (oimg) ctx.drawImage(oimg, px, py, w, w);
-            else ctx.drawImage(tex['ore' + res + '_' + nivel], px, py, w, w);
-          }
-        }
+        if (!res) continue;
+        var ri = D.resInfo(res);
+        if (!ri || !ri.emCima) continue;
+        var qtd = World.amountAt(tx, ty);
+        var nivel = qtd > 600 ? 0 : (qtd > 200 ? 1 : 2);
+        var oimg = Sprites.get(ri.sprite);
+        if (oimg) cc.drawImage(oimg, px, py, TILE, TILE);
+        else cc.drawImage(tex['ore' + res + '_' + nivel], px, py, TILE, TILE);
+      }
+    }
+  }
+
+  /** Guarda só os chunks usados há pouco: cada um pesa alguns MB. */
+  function podarCacheChao() {
+    var chaves = Object.keys(cacheChao);
+    while (chaves.length > CACHE_MAX) {
+      var pior = null, piorUso = Infinity;
+      for (var i = 0; i < chaves.length; i++) {
+        var u = cacheChao[chaves[i]].uso;
+        if (u < piorUso) { piorUso = u; pior = chaves[i]; }
+      }
+      delete cacheChao[pior];
+      chaves.splice(chaves.indexOf(pior), 1);
+    }
+  }
+
+  function desenharChao(cam, x0, x1, y0, y1, s) {
+    redesenhosNoQuadro = 0;
+    var cfg = D.CONFIG;
+    var c0 = Math.floor(cfg.MUNDO_MIN / CHUNK), c1 = Math.floor(cfg.MUNDO_MAX / CHUNK);
+    var cx0 = Math.max(c0, Math.floor(x0 / CHUNK));
+    var cx1 = Math.min(c1, Math.floor(x1 / CHUNK));
+    var cy0 = Math.max(c0, Math.floor(y0 / CHUNK));
+    var cy1 = Math.min(c1, Math.floor(y1 / CHUNK));
+
+    for (var cy = cy0; cy <= cy1; cy++) {
+      for (var cx = cx0; cx <= cx1; cx++) {
+        var img = chaoDoChunk(cx, cy);
+        // arredonda os dois cantos com a mesma conta: assim um chunk
+        // encosta no outro sem deixar risco de 1 pixel no meio
+        var ex = (cx * CHUNK - cam.x) * s + largura / 2;
+        var ey = (cy * CHUNK - cam.y) * s + altura / 2;
+        var px = Math.round(ex), py = Math.round(ey);
+        var pw = Math.round(ex + CHUNK * s) - px;
+        var ph = Math.round(ey + CHUNK * s) - py;
+        ctx.drawImage(img, px, py, pw, ph);
       }
     }
   }
@@ -996,6 +1084,8 @@
     init: init,
     resize: resize,
     draw: draw,
+    sujarTile: sujarTile,
+    limparCacheChao: limparCacheChao,
     paraTela: paraTela,
     paraMundo: paraMundo,
     desenharGrade: desenharGrade,

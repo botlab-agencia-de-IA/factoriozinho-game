@@ -149,16 +149,10 @@
     g.cursor.tx = Math.floor(w.x);
     g.cursor.ty = Math.floor(w.y);
 
-    /* --- roda do mouse: hotbar ou zoom --- */
+    /* --- roda do mouse: zoom, e nada mais.
+       A barra rápida se escolhe pelo número ou clicando no slot. --- */
     var roda = Input.consumirRoda();
-    if (roda) {
-      if (m.ctrl) {
-        g.camera.zoom = Math.max(C.ZOOM_MIN, Math.min(C.ZOOM_MAX, g.camera.zoom - roda));
-      } else {
-        p.hotbar = (p.hotbar + roda + C.HOTBAR_SIZE) % C.HOTBAR_SIZE;
-        global.FZ.Hud.atualizarHotbar();
-      }
-    }
+    if (roda) zoom(-roda);
 
     /* --- mundo --- */
     Entities.update(dt);

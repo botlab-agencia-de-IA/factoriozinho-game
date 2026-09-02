@@ -83,6 +83,26 @@ body.jogando .screen.is-active {
 .aviso.info  { border-left-color: var(--blue); }
 
 /* informação do que está sob o cursor */
+/* contador de quadros por segundo */
+#fps {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  padding: .18rem .5rem;
+  background: rgba(20,22,26,.72);
+  border: 1px solid var(--line-soft);
+  border-radius: 5px;
+  font-size: .74rem;
+  color: var(--txt-dim);
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
+#fps b { font-weight: 700; }
+#fps i { font-style: normal; color: var(--txt-faint); margin-left: .35rem; }
+#fps.bom b { color: var(--green); }
+#fps.medio b { color: var(--amber); }
+#fps.ruim b { color: var(--red); }
+
 /* painel do que está sob o cursor, embaixo do minimapa */
 #inspetor {
   position: absolute;
@@ -468,17 +488,30 @@ body.jogando .screen.is-active {
 /* receitas */
 .lista-receitas { display: flex; flex-direction: column; gap: 3px; margin-bottom: .8rem; }
 
-.secao-receitas {
-  margin: .7rem 0 .15rem;
-  font-size: .68rem;
-  font-weight: 700;
-  letter-spacing: .09em;
-  text-transform: uppercase;
-  color: var(--txt-faint);
-  border-bottom: 1px solid var(--line-soft);
-  padding-bottom: .18rem;
+.secoes-craft {
+  display: flex;
+  gap: 4px;
+  margin-bottom: .6rem;
 }
-.secao-receitas:first-child { margin-top: 0; }
+.secao-btn {
+  flex: 1;
+  padding: .35rem .2rem;
+  background: var(--bg-2);
+  border: 1px solid var(--line-soft);
+  border-radius: 5px;
+  color: var(--txt-dim);
+  font-size: .74rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color .12s, background .12s, color .12s;
+}
+.secao-btn:hover { border-color: var(--orange); color: var(--txt); }
+.secao-btn.sel {
+  background: var(--bg-3);
+  border-color: var(--orange);
+  color: var(--orange);
+}
+.lista-vazia { font-size: .74rem; color: var(--txt-faint); padding: .5rem 0; }
 
 .receita {
   display: flex;

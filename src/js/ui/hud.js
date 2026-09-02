@@ -22,6 +22,7 @@
   var painelEnt = null;
   var acumRefresh = 0;
   var abaAtual = 'fabricar';
+  var catAtual = 'ferramenta';    // seção aberta na fabricação
 
   /* ============================================================
      montagem
@@ -34,6 +35,7 @@
     el.hotbar = document.getElementById('hotbar');
     el.avisos = document.getElementById('avisos');
     el.inspetor = document.getElementById('inspetor');
+    el.fps = document.getElementById('fps');
     el.janelas = document.getElementById('janelas');
     el.maoEl = document.getElementById('mao-cursor');
     el.minimapa = document.getElementById('minimapa-canvas');
@@ -371,6 +373,8 @@
     var dir = document.createElement('div');
     dir.className = 'inv-lado';
     dir.innerHTML = '<h4>Fabricar à mão</h4>';
+    dir.appendChild(barraDeSecoes());
+
     var lista = document.createElement('div');
     lista.className = 'lista-receitas';
     lista.id = 'lista-receitas';
@@ -394,24 +398,16 @@
     if (!lista) return;
     lista.innerHTML = '';
 
-    // uma seção por categoria: picareta não fica no meio de forno e baú
-    var porCat = {};
-    D.HAND_RECIPES.forEach(function (r) {
-      var c = D.categoriaDaReceita(r);
-      (porCat[c] = porCat[c] || []).push(r);
+    // só a seção escolhida: picareta não fica no meio de forno e baú
+    var receitas = D.HAND_RECIPES.filter(function (r) {
+      return D.categoriaDaReceita(r) === catAtual;
     });
 
-    D.CATEGORIAS.forEach(function (cat) {
-      var receitas = porCat[cat.id];
-      if (!receitas || !receitas.length) return;
-
-      var titulo = document.createElement('h5');
-      titulo.className = 'secao-receitas';
-      titulo.textContent = cat.nome;
-      lista.appendChild(titulo);
-
-      receitas.forEach(montarUmaReceita);
-    });
+    if (!receitas.length) {
+      lista.innerHTML = '<p class="lista-vazia">Nada nesta seção ainda.</p>';
+      return;
+    }
+    receitas.forEach(montarUmaReceita);
 
     function montarUmaReceita(r) {
       var pode = PlayerLib.podeFabricar(g.player, r);
@@ -446,6 +442,37 @@
         atualizar();
       });
       lista.appendChild(linha);
+    }
+  }
+
+  /** Os botões que escolhem a seção da fabricação. */
+  function barraDeSecoes() {
+    var barra = document.createElement('div');
+    barra.className = 'secoes-craft';
+    barra.id = 'secoes-craft';
+
+    D.CATEGORIAS.forEach(function (cat) {
+      var b = document.createElement('button');
+      b.className = 'secao-btn' + (cat.id === catAtual ? ' sel' : '');
+      b.textContent = cat.nome;
+      b.dataset.cat = cat.id;
+      b.addEventListener('click', function () {
+        if (catAtual === cat.id) return;
+        catAtual = cat.id;
+        marcarSecaoEscolhida();
+        montarReceitas();
+      });
+      barra.appendChild(b);
+    });
+    return barra;
+  }
+
+  function marcarSecaoEscolhida() {
+    var barra = document.getElementById('secoes-craft');
+    if (!barra) return;
+    for (var i = 0; i < barra.children.length; i++) {
+      var b = barra.children[i];
+      b.classList.toggle('sel', b.dataset.cat === catAtual);
     }
   }
 
@@ -1160,6 +1187,7 @@
   function desenhar(dt) {
     if (!g) return;
 
+    contarFps(dt);
     acumRefresh += dt;
     if (acumRefresh > 0.12) {
       acumRefresh = 0;
@@ -1195,6 +1223,27 @@
     }
     if (el.avisos.innerHTML !== html) el.avisos.innerHTML = html;
 
+  }
+
+  /* Contador de quadros por segundo, no canto de cima à esquerda.
+     Serve para ele conseguir dizer "travou" com número junto. */
+  var fpsAcum = 0, fpsQuadros = 0, fpsUltimo = -1, zoomUltimo = -1;
+
+  function contarFps(dt) {
+    if (!el.fps) return;
+    fpsAcum += dt;
+    fpsQuadros++;
+    if (fpsAcum < 0.4) return;
+
+    var fps = Math.round(fpsQuadros / fpsAcum);
+    fpsAcum = 0;
+    fpsQuadros = 0;
+    if (fps === fpsUltimo && g.camera.zoom === zoomUltimo) return;
+    fpsUltimo = fps;
+    zoomUltimo = g.camera.zoom;
+
+    el.fps.innerHTML = '<b>' + fps + '</b> fps <i>zoom ' + g.camera.zoom + '</i>';
+    el.fps.className = fps >= 50 ? 'bom' : (fps >= 30 ? 'medio' : 'ruim');
   }
 
   function flash(msg) {

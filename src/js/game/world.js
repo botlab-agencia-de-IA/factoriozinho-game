@@ -27,6 +27,7 @@
       seed: seed,
       seedNum: global.FZ.Saves.seedToNumber(seed),
       chunks: {},
+      lista: [],           // as entidades em array, para varrer rápido
       mods: {},            // "x,y" -> [res, amount]  (vai pro save)
       entities: {},        // id -> entidade           (vai pro save)
       entityAt: {},        // "x,y" -> id              (índice)
@@ -35,6 +36,8 @@
     };
 
     voidChunk = criarVoidChunk();
+    esquecerChunkLembrado();
+    if (global.FZ.Render) global.FZ.Render.limparCacheChao();
     regioes = montarRegioes(state.seedNum);
     centrosIniciais = montarCentrosIniciais(state.seedNum);
 
@@ -46,6 +49,7 @@
         for (var id in salvo.entities) {
           var e = salvo.entities[id];
           state.entities[id] = e;
+          state.lista.push(e);
           indexar(e);
         }
       }
@@ -410,15 +414,24 @@
 
   /* ---------------- consulta de tiles ---------------- */
 
-  /* Chamadas milhares de vezes por quadro: não alocam objeto. */
-  var _chunk = null, _i = 0;
+  /* Chamadas milhares de vezes por quadro: não alocam objeto.
+     E lembram do último chunk: o desenho anda de tile em tile, então
+     31 de cada 32 leituras caem no mesmo chunk da leitura anterior e
+     não precisam montar a chave de texto nem procurar no dicionário. */
+  var _chunk = null, _i = 0, _ucx = 1e9, _ucy = 1e9, _uchunk = null;
 
   function idx(x, y) {
     if (!dentroDoMundo(x, y)) { _chunk = voidChunk; _i = 0; return; }
     var cx = Math.floor(x / CHUNK), cy = Math.floor(y / CHUNK);
-    _chunk = getChunk(cx, cy);
+    if (cx !== _ucx || cy !== _ucy) {
+      _ucx = cx; _ucy = cy;
+      _uchunk = getChunk(cx, cy);
+    }
+    _chunk = _uchunk;
     _i = (y - cy * CHUNK) * CHUNK + (x - cx * CHUNK);
   }
+
+  function esquecerChunkLembrado() { _ucx = 1e9; _ucy = 1e9; _uchunk = null; }
 
   function terrainAt(x, y) { idx(x, y); return _chunk.terrain[_i]; }
   function resAt(x, y)     { idx(x, y); return _chunk.res[_i]; }
@@ -431,6 +444,7 @@
     _chunk.amount[_i] = amount;
     state.mods[tileKey(x, y)] = [res, amount];
     if (global.FZ.Minimap) global.FZ.Minimap.atualizarTile(x, y);
+    if (global.FZ.Render) global.FZ.Render.sujarTile(x, y);
   }
 
   /**
@@ -527,6 +541,7 @@
     if (b.tipo === 'inserter') e.segurando = null;
 
     state.entities[e.id] = e;
+    state.lista.push(e);
     indexar(e);
     if (global.FZ.Minimap) global.FZ.Minimap.atualizarArea(x, y, b.w, b.h);
     return e;
@@ -535,13 +550,13 @@
   function removerEntidade(e) {
     desindexar(e);
     delete state.entities[e.id];
+    var i = state.lista.indexOf(e);
+    if (i >= 0) state.lista.splice(i, 1);
     if (global.FZ.Minimap) global.FZ.Minimap.atualizarArea(e.x, e.y, e.w, e.h);
   }
 
   function todasEntidades() {
-    var out = [];
-    for (var id in state.entities) out.push(state.entities[id]);
-    return out;
+    return state.lista;
   }
 
   /* ---------------- itens no chão ---------------- */
@@ -599,6 +614,7 @@
     criarEntidade: criarEntidade,
     removerEntidade: removerEntidade,
     todasEntidades: todasEntidades,
+    aplicarMods: aplicarMods,
     soltarItem: soltarItem,
     acharSpawn: acharSpawn,
     minerioDaRegiao: minerioDaRegiao   // exposto para o teste do quadriculado
