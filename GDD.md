@@ -4,7 +4,7 @@
 > reescrever à vontade — eu leio este arquivo antes de mexer no código. Se algo
 > aqui estiver diferente do jogo, o arquivo ganha.
 >
-> Última atualização: 22/08/2026 · Versão do doc: **0.8** · Jogo: **v0.8.0**
+> Última atualização: 02/09/2026 · Versão do doc: **0.8.1** · Jogo: **v0.8.1**
 >
 > 📦 Código no GitHub: **botlab-agencia-de-IA/factoriozinho-game** (privado)
 > 🧪 Para testar sem abrir o jogo: duplo clique no `testar.bat`
@@ -157,11 +157,21 @@ COLETAR ──► FABRICAR ──► AUTOMATIZAR ──► PRODUZIR MAIS ─┘
 - Terreno: grama, mato, terra, areia, chão de pedra e água (água bloqueia e serve
   para bomba depois).
 
-**Distribuição dos minérios:** cada chunk tem um **minério dominante**, sorteado a
-partir da semente com proporções fixas (22% ferro, 20% carvão, 18% cobre, 18% pedra,
-10% ouro, 7% petróleo, 5% urânio). Um ruído separado decide o formato das manchas
-dentro do chunk. Isso cria **regiões** — uma zona de ferro, uma zona de cobre — e
-garante que **todo minério existe em qualquer semente**.
+**Distribuição dos minérios:** o mundo é dividido em **regiões**, uma por chunk, e
+cada região tem um **minério dominante** sorteado da semente com proporções fixas
+(22% ferro, 20% carvão, 18% cobre, 18% pedra, 10% ouro, 7% petróleo, 5% urânio).
+Um ruído separado decide o formato das manchas. Isso cria zonas de ferro, zonas de
+cobre etc. e garante que **todo minério existe em qualquer semente**.
+
+A região **não é o quadrado do chunk**: cada uma tem um centro sorteado dentro do
+seu chunk e fica com o pedaço de mapa mais perto dele (estilo Voronoi), e o ponto
+consultado ainda passa por duas ondas de ruído antes — uma grande, que entorta a
+fronteira, e uma miúda, que solta ilhotas de um minério dentro do vizinho. Sem isso
+as jazidas paravam em linha reta na borda do chunk e dava para ver o quadriculado
+no mapa. Como as regiões saem de tamanhos diferentes, as proporções são repartidas
+por **área** e não por contagem de região. O teste `10-regioes.js` mede isso: conta
+as trocas de minério coluna a coluna e compara as colunas que caem na borda de chunk
+com as do meio — se a borda não tiver mais troca que o resto, não há quadriculado.
 
 ### 5.4 Mapa (tecla `M`)
 - **Minimapa** fixo no canto superior direito, mostrando ~72 tiles ao redor de você.
@@ -454,9 +464,11 @@ factoriozinho/
 
 | O quê | Situação |
 |---|---|
-| **Dá para ver o quadriculado dos chunks no mapa** | Cada chunk tem um minério dominante, então as jazidas param em linha reta na borda do chunk e o quadriculado aparece. Precisa embaralhar a fronteira com ruído para as regiões se misturarem. **Combinado deixar para depois.** |
 | Inventário pouco intuitivo | A tela do inventário/fabricação precisa de uma passada de organização. Combinado deixar para depois. |
 | Visual em geral | Tudo ainda é desenho provisório feito por código. A arte de verdade entra pelos PNGs (§7). |
+
+**Já resolvido:** o quadriculado dos chunks no mapa (02/09/2026, v0.8.1) — as
+regiões viraram células com centro sorteado e fronteira embaralhada por ruído (§5.3).
 
 ---
 
@@ -489,12 +501,17 @@ factoriozinho/
 
 ## 9.5 📍 Onde paramos
 
-**22/08/2026 — v0.8.0, Fase 2 concluída.**
+**02/09/2026 — v0.8.1, Fase 2 concluída + o quadriculado do mapa resolvido.**
 
 Funcionando: mundo finito por semente, coleta manual, inventário e fabricação,
 construção, forno, mineradora, baú, **esteiras de duas faixas com side-load e curva
 automática**, **inseridores**, minimapa e mapa, save em 5 slots. As 4 picaretas
 existem como item com a arte pronta, mas ainda **não fazem nada**.
+
+O mapa não mostra mais o quadriculado dos chunks (§5.3 e §8.5). **Mundos antigos
+salvos continuam abrindo, mas o mapa deles muda**: o save guarda só o que você
+mexeu, o resto é regerado — então as jazidas que você ainda não tocou aparecem
+redistribuídas.
 
 **O próximo passo do roadmap é a Fase 3 (Montadora)** — mas confirmar com o Vandré
 antes, porque ele costuma testar e trazer ajustes primeiro.
@@ -509,6 +526,7 @@ cores que faltam estão no `CORES.md`.
 
 | Data | O que mudou |
 |---|---|
+| 02/09/2026 | **v0.8.1** — Acabou o **quadriculado dos chunks no mapa** (§8.5): a região de minério deixou de ser o quadrado do chunk e virou uma célula com centro sorteado (estilo Voronoi), com o ponto de consulta embaralhado por duas ondas de ruído — uma grande que entorta a fronteira e uma miúda que solta ilhotas. As proporções passaram a ser repartidas por **área** de região, porque agora as regiões têm tamanhos diferentes. Novo teste `10-regioes.js`, que mede o quadriculado em número em vez de olhar a tela. Corrigido um teste frágil no `08` (procurava carvão numa semente e usava a coordenada em outra). Efeito colateral bom: sementes com começo pobre praticamente sumiram (era ~1 em 40, agora 0 em 120). |
 | 21/08/2026 | Doc criado com a pesquisa dos 3 jogos. Fase 0 (menu) implementada. |
 | 21/08/2026 | **v0.2** — Correções do Vandré: objetivo = sair do planeta; recursos **finitos**; fora árvore de habilidades, respawn, ilhas, economia, NPCs e frascos de ciência; esteiras/blueprints/robôs/inimigos remarcados para fases futuras; `E` abre inventário; adicionada a especificação de arte (§7). **Fase 1 implementada.** |
 | 22/08/2026 | **v0.8** — Mais correções do teste: a **mineradora** agora joga na faixa **do lado dela** (a que fica na frente da saída), enquanto o **inseridor** continua na faixa oposta — assim os dois podem alimentar a mesma esteira sem brigar. Corrigida a **animação da esteira, que corria ao contrário** do sentido dela. Refeita a **textura da curva**: o centro do arco estava no canto errado, por isso as curvas saíam tortas; o caminho do item virou um arco de verdade, com a faixa de dentro num raio menor. Nova tecla **Q**: aponta para algo no chão e pega na mão na hora (copiando inclusive a direção da máquina). |

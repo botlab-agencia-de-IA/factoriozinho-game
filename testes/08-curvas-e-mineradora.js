@@ -11,12 +11,18 @@ let f=0; const ok=(c,m)=>{console.log((c?'  OK  ':'  XX  ')+m); if(!c)f++;};
 console.log('=== MINERADORA: joga na faixa DO LADO DELA (a que fica na frente da saida) ===');
 // esteira indo para o SUL em (5,5); mineradora a OESTE dela.
 // esteira ao sul: "direita" = oeste. Entao a mineradora esta a DIREITA -> faixa DIREITA.
-World.init('M1',null);
-let loc=null;
-for(let y=-60;y<60 && !loc;y++) for(let x=-60;x<60 && !loc;x++){
-  if(World.resAt(x,y)===D.RES.COAL && World.podeConstruir('burner_drill',x,y)
-     && World.podeConstruir('transport_belt',x+2,y)) loc={x,y};
+// Procura no mundo que ACABOU de ser criado. Cada semente e um mundo
+// diferente, entao achar o carvao numa semente e usar a coordenada em
+// outra so funciona por sorte.
+function acharCarvao(){
+  for(let y=-60;y<60;y++) for(let x=-60;x<60;x++){
+    if(World.resAt(x,y)===D.RES.COAL && World.podeConstruir('burner_drill',x,y)
+       && World.podeConstruir('transport_belt',x+2,y)) return {x,y};
+  }
+  throw new Error('nao achei carvao com espaco para a mineradora');
 }
+World.init('M1',null);
+const loc=acharCarvao();
 const dr=World.criarEntidade('burner_drill',loc.x,loc.y,1);   // saida para leste
 Inv.add(dr.inv.fuel,'coal',30);
 const beltPerp=World.criarEntidade('transport_belt',loc.x+2,loc.y,2);   // esteira indo ao SUL
@@ -30,9 +36,10 @@ ok(beltPerp.faixas[1].length>0 && beltPerp.faixas[0].length===0,
 
 console.log('\n=== MINERADORA em esteira RETA (alinhada atras) -> faixa DIREITA ===');
 World.init('M2',null);
-const dr2=World.criarEntidade('burner_drill',loc.x,loc.y,1);
+const loc2=acharCarvao();
+const dr2=World.criarEntidade('burner_drill',loc2.x,loc2.y,1);
 Inv.add(dr2.inv.fuel,'coal',30);
-const beltReta=World.criarEntidade('transport_belt',loc.x+2,loc.y,1);   // mesma direcao da saida
+const beltReta=World.criarEntidade('transport_belt',loc2.x+2,loc2.y,1);   // mesma direcao da saida
 rodar(40);
 console.log('  esquerda: '+beltReta.faixas[0].length+' | direita: '+beltReta.faixas[1].length);
 ok(beltReta.faixas[1].length===4 && beltReta.faixas[0].length===0,'esteira reta: so a faixa da DIREITA');

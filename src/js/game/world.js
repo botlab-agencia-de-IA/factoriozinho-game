@@ -81,11 +81,24 @@
 
   /* Jazidas duras.
      Em vez de um ruído por minério (caro), um ruído só decide ONDE tem
-     jazida, e cada chunk tem um minério dominante sorteado da tabela
-     abaixo. Assim o mundo fica com regiões de ferro, regiões de cobre
-     etc., e todos os minérios existem sempre — as proporções são exatas. */
+     jazida, e uma REGIÃO decide QUAL minério. Assim o mundo fica com
+     regiões de ferro, regiões de cobre etc., e todos os minérios existem
+     sempre — as proporções saem da tabela abaixo.
+
+     A região não é o chunk: é uma célula com o centro sorteado dentro
+     dele (estilo Voronoi), e o ponto de consulta ainda passa por um
+     embaralhamento antes de procurar a célula mais perto. Sem isso as
+     jazidas paravam em linha reta na borda do chunk e dava para ver o
+     quadriculado no mapa (§8.5). */
   var RIQUEZA_ESCALA = 16;
   var RIQUEZA_THR = 0.628;
+
+  /* O quanto o centro da célula pode sair do meio do chunk (em chunks). */
+  var REGIAO_JITTER = 0.42;
+  /* Onda grande: entorta a fronteira entre duas regiões. */
+  var WARP_ESCALA = 26, WARP_AMP = 64;
+  /* Onda miúda: solta ilhotas de um minério dentro do vizinho. */
+  var ILHA_ESCALA = 8, ILHA_AMP = 18;
 
   var PROPORCAO_REGIOES = [
     [RES.COAL,    20],
@@ -97,35 +110,108 @@
     [RES.URANIUM,  5]
   ];
 
-  var regioes = null;      // um minério por chunk, embaralhado pela semente
+  var regioes = null;      // um minério por célula, embaralhado pela semente
+  var regiaoCx = null;     // centro de cada célula, em tiles (já com o jitter)
+  var regiaoCy = null;
+
+  var AREA_PASSO = 4;      // de quantos em quantos tiles a área é medida
 
   function montarRegioes(seed) {
-    var total = C.MUNDO_CHUNKS * C.MUNDO_CHUNKS;
-    var lista = [];
-    var i, j;
+    var N = C.MUNDO_CHUNKS;
+    var total = N * N;
+    var i, j, k;
 
-    // monta a lista respeitando as proporções e completa com ferro
-    for (i = 0; i < PROPORCAO_REGIOES.length; i++) {
-      var quantas = Math.round(PROPORCAO_REGIOES[i][1] / 100 * total);
-      for (j = 0; j < quantas; j++) lista.push(PROPORCAO_REGIOES[i][0]);
+    /* 1. cada célula ganha um centro sorteado dentro do próprio chunk */
+    var c0 = Math.floor(MIN / CHUNK);
+    regiaoCx = new Float64Array(total);
+    regiaoCy = new Float64Array(total);
+    for (var ry = 0; ry < N; ry++) {
+      for (var rx = 0; rx < N; rx++) {
+        k = ry * N + rx;
+        var jx = (R.hash2(rx, ry, seed + 8081) - 0.5) * 2 * REGIAO_JITTER;
+        var jy = (R.hash2(rx, ry, seed + 9091) - 0.5) * 2 * REGIAO_JITTER;
+        regiaoCx[k] = (c0 + rx + 0.5 + jx) * CHUNK;
+        regiaoCy[k] = (c0 + ry + 0.5 + jy) * CHUNK;
+      }
     }
-    while (lista.length < total) lista.push(RES.IRON);
-    lista.length = total;
 
-    // embaralha de forma determinística
+    /* 2. mede quanto de mapa cada célula abocanhou. Com o jitter e o
+       embaralhamento elas ficam de tamanhos bem diferentes, então
+       contar célula não acerta a proporção — o que vale é a área. */
+    var area = new Float64Array(total);
+    var amostras = 0;
+    for (var y = MIN; y <= MAX; y += AREA_PASSO) {
+      for (var x = MIN; x <= MAX; x += AREA_PASSO) {
+        area[celulaEm(x, y)]++;
+        amostras++;
+      }
+    }
+
+    /* 3. reparte: cada minério tem uma cota de área, e a célula da vez
+       fica com quem está mais atrasado. A ordem das células é sorteada
+       pela semente, então os minérios raros caem espalhados. */
+    var ordem = new Array(total);
+    for (i = 0; i < total; i++) ordem[i] = i;
     var rnd = R.makeRng(seed + 4242);
-    for (i = lista.length - 1; i > 0; i--) {
+    for (i = total - 1; i > 0; i--) {
       j = Math.floor(rnd() * (i + 1));
-      var t = lista[i]; lista[i] = lista[j]; lista[j] = t;
+      var t = ordem[i]; ordem[i] = ordem[j]; ordem[j] = t;
+    }
+
+    var cota = [];
+    for (i = 0; i < PROPORCAO_REGIOES.length; i++)
+      cota.push(PROPORCAO_REGIOES[i][1] / 100 * amostras);
+
+    var lista = new Array(total);
+    for (i = 0; i < total; i++) {
+      k = ordem[i];
+      var dono = 0;
+      for (j = 1; j < cota.length; j++) if (cota[j] > cota[dono]) dono = j;
+      lista[k] = PROPORCAO_REGIOES[dono][0];
+      cota[dono] -= area[k];
     }
     return lista;
   }
 
-  function minerioDaRegiao(cx, cy) {
-    var c0 = Math.floor(MIN / CHUNK);
-    var rx = cx - c0, ry = cy - c0;
-    if (rx < 0 || ry < 0 || rx >= C.MUNDO_CHUNKS || ry >= C.MUNDO_CHUNKS) return RES.IRON;
-    return regioes[ry * C.MUNDO_CHUNKS + rx];
+  /** Em que célula este tile cai. */
+  function celulaEm(x, y) {
+    var seed = state.seedNum;
+    var N = C.MUNDO_CHUNKS, c0 = Math.floor(MIN / CHUNK);
+
+    /* embaralha o ponto antes de procurar a célula: a onda grande
+       entorta a fronteira, a miúda solta as ilhotas */
+    var wx = x + (R.fbm(x / WARP_ESCALA, y / WARP_ESCALA, seed + 3311, 2) - 0.5) * WARP_AMP
+               + (R.valueNoise(x / ILHA_ESCALA, y / ILHA_ESCALA, seed + 4477) - 0.5) * ILHA_AMP;
+    var wy = y + (R.fbm(x / WARP_ESCALA, y / WARP_ESCALA, seed + 5533, 2) - 0.5) * WARP_AMP
+               + (R.valueNoise(x / ILHA_ESCALA, y / ILHA_ESCALA, seed + 6699) - 0.5) * ILHA_AMP;
+    wx = R.clamp(wx, MIN, MAX);
+    wy = R.clamp(wy, MIN, MAX);
+
+    /* célula mais perto. O jitter deixa um centro a até ~0,9 chunk do
+       lugar nominal, então olhar 5x5 e não 3x3 — senão o próprio raio da
+       busca vira uma borda reta e o quadriculado volta. */
+    var gx = Math.floor(wx / CHUNK) - c0;
+    var gy = Math.floor(wy / CHUNK) - c0;
+    var melhor = -1, melhorD = Infinity;
+    for (var dy = -2; dy <= 2; dy++) {
+      var ry2 = gy + dy;
+      if (ry2 < 0 || ry2 >= N) continue;
+      for (var dx = -2; dx <= 2; dx++) {
+        var rx2 = gx + dx;
+        if (rx2 < 0 || rx2 >= N) continue;
+        var k2 = ry2 * N + rx2;
+        var ex = regiaoCx[k2] - wx, ey = regiaoCy[k2] - wy;
+        var d2 = ex * ex + ey * ey;
+        if (d2 < melhorD) { melhorD = d2; melhor = k2; }
+      }
+    }
+    return melhor;
+  }
+
+  /** Qual minério manda neste tile. Só é chamado onde já tem jazida. */
+  function minerioDaRegiao(x, y) {
+    var k = celulaEm(x, y);
+    return k < 0 ? RES.IRON : regioes[k];
   }
 
   /* Depósitos de superfície: dependem do bioma, não competem com as jazidas. */
@@ -244,7 +330,7 @@
         /* --- jazidas duras --- */
         var riqueza = R.fbm(x / RIQUEZA_ESCALA, y / RIQUEZA_ESCALA, seed + 100, 3);
         if (riqueza > RIQUEZA_THR) {
-          res[i] = minerioDaRegiao(cx, cy);
+          res[i] = minerioDaRegiao(x, y);
           amount[i] = Math.round(180 + (riqueza - RIQUEZA_THR) * 7000);
           continue;
         }
@@ -495,6 +581,7 @@
     removerEntidade: removerEntidade,
     todasEntidades: todasEntidades,
     soltarItem: soltarItem,
-    acharSpawn: acharSpawn
+    acharSpawn: acharSpawn,
+    minerioDaRegiao: minerioDaRegiao   // exposto para o teste do quadriculado
   };
 })(window);
