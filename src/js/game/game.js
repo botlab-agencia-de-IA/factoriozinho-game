@@ -194,6 +194,29 @@
     var novoCliqueEsq = m.esq && !g.cliqueEsqAnterior;
     var novoCliqueDir = m.dir && !g.cliqueDirAnterior;
 
+    /* ---- com uma pilha presa ao cursor, o clique abastece a máquina ----
+       É o jeito do Factorio: pega metade do carvão com o botão direito na
+       mochila, fecha a mochila e vai clicando nas fornalhas. */
+    if (global.FZ.Hud.maoCheia()) {
+      if (novoCliqueEsq || novoCliqueDir) {
+        var maq = World.entityAt(tx, ty);
+        if (!maq) {
+          global.FZ.Hud.largarMao();
+          aviso('Voltou para a mochila', 'info');
+        } else if (!PlayerLib.noAlcance(p, maq.x, maq.y)) {
+          aviso('Longe demais', 'erro');
+        } else {
+          var n = global.FZ.Hud.abastecer(maq, novoCliqueDir ? 1 : 0);
+          var nomeMaq = D.building(maq.tipo).nome;
+          if (n > 0) aviso('+' + n + ' → ' + nomeMaq, 'ok');
+          else if (n < 0) aviso(nomeMaq + ' não usa isso', 'erro');
+          else aviso(nomeMaq + ' está cheio', 'erro');
+        }
+      }
+      PlayerLib.pararDeMinerar(p);
+      return;
+    }
+
     /* ---- botão direito: remover construção ---- */
     if (novoCliqueDir) {
       var alvo = World.entityAt(tx, ty);
@@ -362,6 +385,7 @@
      ============================================================ */
 
   function salvarJogo(silencioso) {
+    if (global.FZ.Hud.maoCheia && global.FZ.Hud.maoCheia()) global.FZ.Hud.largarMao();
     if (!g) return false;
     var s = g.save;
     s.playtime = Math.floor(g.tempo);

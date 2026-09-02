@@ -5,8 +5,8 @@
 (function (global) {
   'use strict';
 
-  var VERSION = '0.8.4';
-  var PHASE = 'Fase 2 — mapa, painéis e desempenho';
+  var VERSION = '0.8.5';
+  var PHASE = 'Fase 2 — inventário esperto e desempenho';
 
   function boot() {
     global.FZ.Settings.load();

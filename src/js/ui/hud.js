@@ -21,6 +21,10 @@
   var uiHover = false;
   var painelEnt = null;
   var acumRefresh = 0;
+  var arrasto = null;           // arrastando a pilha por vários slots
+  var ultimoItem = null;        // para reconhecer o clique duplo
+  var ultimoCfg = null;
+  var ultimoT = 0;
   var abaAtual = 'fabricar';
   var catAtual = 'ferramenta';    // seção aberta na fabricação
 
@@ -51,6 +55,7 @@
     }
 
     document.addEventListener('mousemove', moverMao);
+    document.addEventListener('mouseup', terminarArrasto);
     el.janelas.addEventListener('mouseenter', function () { uiHover = true; }, true);
     el.janelas.addEventListener('mouseleave', function () { uiHover = false; }, true);
     el.hud.addEventListener('mouseenter', function () { uiHover = true; }, true);
@@ -62,8 +67,9 @@
   function desmontar() {
     fecharTudo();
     document.removeEventListener('mousemove', moverMao);
+    document.removeEventListener('mouseup', terminarArrasto);
     if (el.hotbar) el.hotbar.innerHTML = '';
-    mao = null;
+    largarMao();          // sair com a pilha na mão não pode comer o item
     g = null;
   }
 
@@ -96,18 +102,48 @@
     d._cfg = cfg;
     d.addEventListener('mousedown', function (ev) {
       ev.preventDefault();
-      // Shift + clique = manda a pilha inteira para o outro lado
-      if (ev.shiftKey && ev.button === 0) { transferirRapido(cfg); return; }
+      var direito = ev.button === 2;
+      var s = cfg.slots[cfg.i];
+      var item = mao ? mao.item : (s ? s.item : null);
+
+      /* Dois cliques rápidos no MESMO slot. Tem que ser o mesmo slot:
+         senão clicar depressa em dois lugares com o mesmo item já valia
+         como duplo. E o segundo clique costuma cair num slot que o
+         primeiro esvaziou, então o item vem lembrado do anterior. */
+      var duplo = cfg === ultimoCfg && (Date.now() - ultimoT) < 350;
+      var alvo = item || (duplo ? ultimoItem : null);
+      ultimoCfg = cfg;
+      ultimoItem = alvo;
+      ultimoT = Date.now();
+
+      // Shift = manda para o outro lado; com clique duplo, manda TUDO desse item
+      if (ev.shiftKey && !direito) {
+        if (duplo && alvo) transferirTodosIguais(alvo, cfg);
+        else transferirRapido(cfg);
+        return;
+      }
+
+      // clique duplo com a pilha na mão: junta todo o resto desse item nela
+      if (duplo && !direito && mao) { juntarNaMao(); return; }
+
       // clicar na barra rápida com nada aberto = só escolher o slot
       if (cfg.hotbar && !temJanela()) {
         g.player.hotbar = cfg.i;
         atualizarHotbar();
         return;
       }
-      cliqueSlot(cfg, ev.button === 2);
+
+      // com a pilha na mão, o clique pode virar arrasto por vários slots;
+      // quem decide é o soltar do botão (um slot só = clique normal)
+      if (mao) { arrasto = { direito: direito, cfgs: [cfg] }; return; }
+
+      cliqueSlot(cfg, direito);
     });
     d.addEventListener('contextmenu', function (ev) { ev.preventDefault(); });
-    d.addEventListener('mouseenter', function () { mostrarDica(d, cfg); });
+    d.addEventListener('mouseenter', function () {
+      mostrarDica(d, cfg);
+      if (arrasto && arrasto.cfgs.indexOf(cfg) < 0) arrasto.cfgs.push(cfg);
+    });
     d.addEventListener('mouseleave', esconderDica);
 
     pintarSlot(d);
@@ -182,6 +218,143 @@
         mao = tmp;
       }
     }
+    atualizar();
+    desenharMao();
+  }
+
+  /* ============================================================
+     Arrastar a pilha por vários slots (jeito do Minecraft)
+     Botão esquerdo divide igual entre os slots por onde passou;
+     o botão direito deixa 1 em cada. O que sobrar continua na mão.
+     ============================================================ */
+
+  function terminarArrasto() {
+    var a = arrasto;
+    arrasto = null;
+    if (!a) return;
+    if (!mao) { atualizar(); return; }
+
+    // passou por um slot só? então foi clique comum
+    if (a.cfgs.length <= 1) { cliqueSlot(a.cfgs[0], a.direito); return; }
+    espalhar(a.cfgs, a.direito);
+  }
+
+  function espalhar(cfgs, direito) {
+    var podem = [];
+    for (var i = 0; i < cfgs.length; i++) {
+      var c = cfgs[i];
+      if (!slotAceita(c, mao.item)) continue;
+      var s = c.slots[c.i];
+      if (s && s.item !== mao.item) continue;      // só vazio ou do mesmo item
+      podem.push(c);
+    }
+    if (!podem.length) { atualizar(); desenharMao(); return; }
+
+    var max = D.stackMax(mao.item);
+    var cada = direito ? 1 : Math.floor(mao.count / podem.length);
+    if (cada < 1) cada = 1;
+
+    for (var k = 0; k < podem.length; k++) {
+      if (!mao || mao.count <= 0) break;
+      var cfg = podem[k];
+      var slot = cfg.slots[cfg.i];
+      var tem = slot ? slot.count : 0;
+      var cabe = Math.min(cada, max - tem, mao.count);
+      if (cabe <= 0) continue;
+      if (slot) slot.count += cabe;
+      else cfg.slots[cfg.i] = { item: mao.item, count: cabe };
+      mao.count -= cabe;
+    }
+    if (mao && mao.count <= 0) mao = null;
+    atualizar();
+    desenharMao();
+  }
+
+  /* ============================================================
+     Clique duplo (jeito do Minecraft)
+     Sozinho: junta todo o resto daquele item na mão.
+     Com Shift: manda todo aquele item para o outro lado.
+     ============================================================ */
+
+  /** Todos os montes de slots que estão à vista agora. */
+  function inventariosAbertos() {
+    var out = [g.player.inv];
+    if (painelEnt) {
+      for (var nome in painelEnt.inv) out.push(painelEnt.inv[nome]);
+    }
+    return out;
+  }
+
+  function juntarNaMao() {
+    var max = D.stackMax(mao.item);
+    var falta = max - mao.count;
+    if (falta <= 0) return;
+
+    // começa pelos montes menores, para limpar os restos primeiro
+    var achados = [];
+    var caixas = inventariosAbertos();
+    for (var c = 0; c < caixas.length; c++) {
+      var slots = caixas[c];
+      for (var i = 0; i < slots.length; i++) {
+        if (slots[i] && slots[i].item === mao.item) achados.push({ slots: slots, i: i });
+      }
+    }
+    achados.sort(function (a, b) { return a.slots[a.i].count - b.slots[b.i].count; });
+
+    for (var k = 0; k < achados.length && falta > 0; k++) {
+      var s = achados[k].slots[achados[k].i];
+      var pega = Math.min(falta, s.count);
+      s.count -= pega;
+      mao.count += pega;
+      falta -= pega;
+      if (s.count <= 0) achados[k].slots[achados[k].i] = null;
+    }
+    atualizar();
+    desenharMao();
+  }
+
+  /** Manda TUDO desse item para o outro lado, e o que está na mão junto. */
+  function transferirTodosIguais(item, cfg) {
+    if (!painelEnt) { transferirRapido(cfg); return; }
+
+    var movidos = 0, i, resto;
+    var daMochila = (cfg.contexto === 'inv');
+
+    if (daMochila) {
+      var destino = slotDestinoNaMaquina(painelEnt, item);
+      if (!destino) { flash(D.itemNome(item) + ' não serve nessa máquina'); return; }
+      var inv = g.player.inv;
+      for (i = 0; i < inv.length; i++) {
+        if (!inv[i] || inv[i].item !== item) continue;
+        resto = Inv.add(destino, item, inv[i].count);
+        movidos += inv[i].count - resto;
+        inv[i].count = resto;
+        if (inv[i].count <= 0) inv[i] = null;
+      }
+      if (mao && mao.item === item) {
+        resto = Inv.add(destino, item, mao.count);
+        movidos += mao.count - resto;
+        mao = resto > 0 ? { item: item, count: resto } : null;
+      }
+    } else {
+      for (var nome in painelEnt.inv) {
+        var slots = painelEnt.inv[nome];
+        for (i = 0; i < slots.length; i++) {
+          if (!slots[i] || slots[i].item !== item) continue;
+          resto = Inv.add(g.player.inv, item, slots[i].count);
+          movidos += slots[i].count - resto;
+          slots[i].count = resto;
+          if (slots[i].count <= 0) slots[i] = null;
+        }
+      }
+      if (mao && mao.item === item) {
+        resto = Inv.add(g.player.inv, item, mao.count);
+        movidos += mao.count - resto;
+        mao = resto > 0 ? { item: item, count: resto } : null;
+      }
+    }
+
+    if (!movidos) flash('Não coube mais nada lá');
     atualizar();
     desenharMao();
   }
@@ -322,8 +495,10 @@
   }
 
   function fecharTudo() {
-    largarMao();
+    // a pilha do cursor NÃO volta para a mochila: fechar a janela com
+    // ela na mão é justamente o jeito de abastecer a máquina no mundo
     esconderDica();
+    arrasto = null;
     if (el.janelas) el.janelas.innerHTML = '';
     mapaCanvas = null;
     mapaInfo = null;
@@ -1246,6 +1421,34 @@
     el.fps.className = fps >= 50 ? 'bom' : (fps >= 30 ? 'medio' : 'ruim');
   }
 
+  /* ============================================================
+     Pilha na mão + clique na máquina do mundo (jeito do Factorio)
+     ============================================================ */
+
+  function maoCheia() { return !!mao; }
+
+  /**
+   * Enfia o que está na mão na máquina apontada.
+   * @param {number} quantos 0 = tudo que couber
+   * @returns {number} quantos entraram
+   */
+  function abastecer(e, quantos) {
+    if (!mao) return 0;
+    var destino = slotDestinoNaMaquina(e, mao.item);
+    if (!destino) return -1;                     // essa máquina não usa isso
+
+    var querendo = quantos > 0 ? Math.min(quantos, mao.count) : mao.count;
+    var resto = Inv.add(destino, mao.item, querendo);
+    var entraram = querendo - resto;
+    if (entraram <= 0) return 0;
+
+    mao.count -= entraram;
+    if (mao.count <= 0) mao = null;
+    atualizar();
+    desenharMao();
+    return entraram;
+  }
+
   function flash(msg) {
     if (global.FZ.Game) global.FZ.Game.aviso(msg, 'erro');
   }
@@ -1263,6 +1466,9 @@
     fecharPainel: fecharTudo,
     escape: escape,
     mouseSobreUi: mouseSobreUi,
+    maoCheia: maoCheia,
+    abastecer: abastecer,
+    largarMao: largarMao,
     lerLugarDoMapa: lerLugar    // exposto para o teste do inspetor
   };
 })(window);

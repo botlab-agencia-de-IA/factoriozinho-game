@@ -4,7 +4,7 @@
 > reescrever à vontade — eu leio este arquivo antes de mexer no código. Se algo
 > aqui estiver diferente do jogo, o arquivo ganha.
 >
-> Última atualização: 02/09/2026 · Versão do doc: **0.8.4** · Jogo: **v0.8.4**
+> Última atualização: 02/09/2026 · Versão do doc: **0.8.5** · Jogo: **v0.8.5**
 >
 > 📦 Código no GitHub: **botlab-agencia-de-IA/factoriozinho-game** (privado)
 > 🧪 Para testar sem abrir o jogo: duplo clique no `testar.bat`
@@ -147,6 +147,24 @@ COLETAR ──► FABRICAR ──► AUTOMATIZAR ──► PRODUZIR MAIS ─┘
   Escolhe-se pelo **número (1–8) ou clicando no slot** — a roda do mouse **não**
   troca de slot, ela é só do zoom.
 - Pegar/soltar pilha com o mouse (clique esquerdo pega tudo, direito pega metade).
+
+**As manhas de inventário** (copiadas do Factorio e do Minecraft, a pedido dele):
+
+| Gesto | O que faz | De onde veio |
+|---|---|---|
+| Botão **direito** numa pilha | pega **metade** dela no cursor | Factorio |
+| **Fechar a mochila** com algo no cursor | a pilha **continua na mão** | Factorio |
+| **Clique esquerdo numa máquina** com a pilha na mão | enfia **tudo que couber** no slot certo (combustível vai para o combustível, minério para a entrada) | Factorio |
+| **Clique direito numa máquina** com a pilha na mão | enfia **um** | Factorio |
+| Clique esquerdo **no chão** com a pilha na mão | devolve para a mochila | — |
+| **Arrastar** a pilha por vários slots | divide **igual** entre eles; o resto fica no cursor | Minecraft |
+| **Arrastar com o direito** | deixa **um** em cada slot | Minecraft |
+| **Dois cliques** no mesmo slot com a pilha na mão | junta **todo aquele item** na mão, começando pelos montes menores | Minecraft |
+| **Shift + clique** | manda aquela pilha para o outro lado | Factorio/Minecraft |
+| **Shift + dois cliques** no mesmo slot | manda **todo aquele item** para o outro lado, nos dois sentidos | Minecraft |
+
+O clique duplo só vale no **mesmo slot** e dentro de 350 ms — senão clicar
+depressa em dois lugares com o mesmo item já contaria como duplo.
 
 ### 5.3 Mundo e mapa
 - **Contínuo** (sem ilhas) e **FINITO**, gerado por **semente** — mesma semente, mesmo mapa.
@@ -372,6 +390,7 @@ uma cadeia de produção, mas sem o intermediário artificial do frasco.
 | **Pegar na mão o que está sob o cursor** | **`Q`** |
 | Fabricar | `C` (ou a aba dentro do inventário) |
 | Barra rápida | `1`–`8` **ou clicar no slot** (a roda não troca de slot) |
+| Abastecer máquina | pegar a pilha na mochila e **clicar na máquina** (direito enfia 1) |
 | Zoom | **roda do mouse**, ou `+` / `-` |
 | Pausar / menu | `Esc` |
 
@@ -518,9 +537,25 @@ zoom. Medido pelo teste `13-desempenho-e-secoes.js`, numa tela de 1400×730:
 | 2 | 36 | ~300 |
 | 1 | 43 | ~2000 |
 
+E numa **mata fechada**, que era o caso ruim de verdade, no zoom 1: **16 desenhos
+por quadro**, contra ~362 antes.
+
+**As árvores e os pedregulhos vão no mesmo desenho guardado.** Eram eles o
+verdadeiro peso: numa mata fechada davam ~360 desenhos por quadro, um por árvore
+— por isso o jogo ficava liso perto da base (já desmatada) e travava no mato. Com
+elas dentro do chunk guardado, o mesmo lugar caiu para **16 desenhos por quadro**.
+Duas coisas que isso exige:
+- o canvas do chunk tem **um tile de margem em cima**, senão a copa da árvore da
+  primeira linha sairia cortada bem na emenda entre dois chunks;
+- como a árvore vem pintada junto com o chão, ela ficaria sempre atrás do jogador
+  — então as poucas árvores **à frente dele** (uma janela de ~20 tiles em volta)
+  são repintadas por cima depois.
+
 Regras da coisa:
-- **Guarda no máximo 12 chunks** (cada um pesa ~4 MB); os que saem de vista são
+- **Guarda no máximo 14 chunks** (cada um pesa ~4 MB); os que saem de vista são
   descartados pelo menos usado.
+- O chunk do lado para onde a câmera está indo é pintado **antes de aparecer**, um
+  por quadro, para a pintura não cair no mesmo quadro em que ele entra na tela.
 - Minerar **suja** o chunk, que é repintado no quadro seguinte — no máximo 2
   repinturas por quadro, para uma fábrica grande não engasgar tudo de uma vez.
 - Trocar de mundo ou carregar a arte de verdade (PNGs) **limpa o cache inteiro**.
@@ -589,7 +624,7 @@ regiões viraram células com centro sorteado e fronteira embaralhada por ruído
 
 ## 9.5 📍 Onde paramos
 
-**02/09/2026 — v0.8.4, Fase 2 concluída + mapa, painéis e desempenho.**
+**02/09/2026 — v0.8.5, Fase 2 concluída + mapa, painéis, desempenho e inventário.**
 
 Funcionando: mundo finito por semente, coleta manual, inventário e fabricação,
 construção, forno, mineradora, baú, **esteiras de duas faixas com side-load e curva
@@ -605,6 +640,11 @@ fabricação foi dividida em seções, uma por vez (§5.8).
 A **roda do mouse agora é só do zoom** (a barra rápida vai por número ou clique), o
 chão passou a ser desenhado por chunk guardado — o que resolveu o travamento no zoom
 aberto (§8.3) — e há um **contador de fps** no canto de cima à esquerda.
+
+O inventário ganhou as manhas do Factorio e do Minecraft (§5.2): pegar metade com
+o direito, sair com a pilha na mão e abastecer a máquina clicando nela, arrastar
+dividindo entre slots, clique duplo juntando tudo e Shift + clique duplo mandando
+todo um item para o baú.
 
 **Falta fazer no mapa (`M`), combinado com ele:** dar zoom no mapa com a roda,
 para poder aproximar um canto e ver as estruturas daquele pedaço.
@@ -628,6 +668,7 @@ cores que faltam estão no `CORES.md`.
 
 | Data | O que mudou |
 |---|---|
+| 02/09/2026 | **v0.8.5** — **O travamento no mato acabou**: as árvores eram desenhadas uma a uma (~360 por quadro numa mata fechada) e foram para dentro do desenho guardado do chunk — 16 por quadro no mesmo lugar (§8.3). Por isso a base dele rodava lisa e o mato travava: perto da base já estava desmatado. **O inventário ganhou as manhas do Factorio e do Minecraft** (§5.2): botão direito pega metade, fechar a mochila não devolve o que está na mão, clicar na máquina abastece (direito enfia 1), arrastar a pilha divide igual entre os slots, dois cliques juntam todo o item na mão e Shift + dois cliques mandam todo o item para o baú e de volta. Novo teste `14-inventario-esperto.js`, com um DOM de mentira que responde a clique e a arrasto. |
 | 02/09/2026 | **v0.8.4** — **A roda do mouse virou só zoom** (sem `Ctrl`), e a barra rápida passou a ser escolhida só por número ou clique. **Contador de fps** no canto de cima à esquerda, com o zoom do lado. **O travamento no zoom aberto acabou** (§8.3): o chão agora é desenhado por chunk de um canvas guardado — 43 desenhos por quadro no zoom 1, contra ~2000 antes; junto, `World.idx()` passou a lembrar do último chunk e o render varre a lista de entidades em vez de perguntar tile a tile. A **fabricação passou a mostrar uma seção por vez**, com botões de Ferramentas / Estruturas / Itens. Novo teste `13-desempenho-e-secoes.js`, que conta os desenhos de um quadro com um canvas de mentira. **Combinado para depois: zoom no mapa do `M`.** |
 | 02/09/2026 | **v0.8.3** — Correções do teste dele. O **inspetor foi para o lugar certo**: canto direito da **tela do jogo**, embaixo do minimapa (antes eu só tinha posto na janela do mapa). A **tarja do meio do topo saiu**, e a **barra de progresso saiu de baixo das estruturas** — a progressão agora só aparece no painel. Descoberto que o navegador servia js e css **em cache** quando o jogo abre por duplo clique: todo script e css do `index.html` agora leva `?v=` (ver §8.4). Nas jazidas, entrou uma **faixa sem minério entre regiões vizinhas** (§5.3): minérios diferentes não nascem mais colados (encosto caiu de 5,4% para 0,04%) e as retas que sobravam sumiram; a cobertura caiu de ~19% para ~12% do mapa, com ~89 jazidas de 40+ tiles por mundo. A **fabricação virou três seções** — Ferramentas, Estruturas e Itens (§5.8). Novo teste `12-painel-no-jogo.js`. |
 | 02/09/2026 | **v0.8.2** — **Inspetor no mapa** (§5.4): passar o mouse por qualquer lugar do mapa mostra na coluna da direita, embaixo da legenda e com ícone, o que tem ali — a jazida com o quanto sobrou no quadrado e na mancha inteira, o forno com o que está fundindo e a barra de progresso, a mineradora com o total que ainda dá para tirar e quanto tempo falta, o baú com o conteúdo, a esteira com as duas faixas e o inseridor com o que está na mão. As barras andam sozinhas com o mouse parado. O texto de hover saiu do rodapé do mapa e virou esse painel. Novo teste `11-inspetor-do-mapa.js`. Registradas duas decisões dele: **areia, argila e terra vão deixar de ser jazidas** (§5.5, a definir) e o **`git push` passa a esperar a ordem dele**. |

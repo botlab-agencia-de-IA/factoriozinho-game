@@ -32,6 +32,11 @@ servidor local com o Node e abre o jogo em `http://localhost:8080`).
 | Mochila e fabricação | `E` |
 | Mapa | `M` (ou clicar no minimapa) |
 | Barra rápida | `1`–`8` ou clicar no slot |
+| Pegar metade da pilha | botão **direito** nela, dentro da mochila |
+| Abastecer uma máquina | com a pilha na mão, **clicar na máquina** (direito enfia 1) |
+| Dividir entre slots | **arrastar** a pilha por eles |
+| Juntar tudo de um item | **dois cliques** no slot |
+| Mandar tudo para o baú | **Shift + dois cliques** no slot |
 | Zoom | roda do mouse (ou `+` e `-`) |
 | Pausa / menu | `Esc` |
 
@@ -56,7 +61,7 @@ servidor local com o Node e abre o jogo em `http://localhost:8080`).
 
 ## 🧪 Testes
 
-Duplo clique no **`testar.bat`** (ou `node testes/rodar-tudo.js`). Ele roda 13
+Duplo clique no **`testar.bat`** (ou `node testes/rodar-tudo.js`). Ele roda 14
 conjuntos de testes que verificam o mundo, os recursos finitos, o inventário, o
 forno, a mineradora, as esteiras de duas faixas, os inseridores, as curvas, o
 desenho das regiões de minério e o inspetor do mapa — tudo sem precisar abrir o jogo.
