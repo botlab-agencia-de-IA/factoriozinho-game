@@ -4,7 +4,7 @@
 > reescrever à vontade — eu leio este arquivo antes de mexer no código. Se algo
 > aqui estiver diferente do jogo, o arquivo ganha.
 >
-> Última atualização: 02/09/2026 · Versão do doc: **0.8.1** · Jogo: **v0.8.1**
+> Última atualização: 02/09/2026 · Versão do doc: **0.8.2** · Jogo: **v0.8.2**
 >
 > 📦 Código no GitHub: **botlab-agencia-de-IA/factoriozinho-game** (privado)
 > 🧪 Para testar sem abrir o jogo: duplo clique no `testar.bat`
@@ -177,10 +177,27 @@ com as do meio — se a borda não tiver mais troca que o resto, não há quadri
 - **Minimapa** fixo no canto superior direito, mostrando ~72 tiles ao redor de você.
 - **`M` (ou clicar no minimapa)** abre o mapa do mundo inteiro, com:
   - todos os recursos por cor, as construções em laranja e você marcado com um anel
-  - o mouse por cima mostra a coordenada e o que tem ali
   - uma **legenda com quanto ainda existe de cada recurso no mundo inteiro** — quando
     algo acaba, aparece "acabou" em vermelho
+  - um **inspetor na coluna da direita, embaixo da legenda**: passa o mouse por
+    qualquer lugar do mapa e ele mostra ali, com o ícone, o que tem naquele quadrado
 - O mapa é atualizado na hora: minerou, mudou.
+
+**O inspetor do mapa** (canto direito, embaixo da legenda) mostra, conforme o que
+está sob o mouse:
+
+| Onde o mouse está | O que aparece |
+|---|---|
+| **Jazida** | ícone do minério que ela rende, quanto ainda tem **neste quadrado** e quanto tem **a jazida inteira** (a mancha ligada) |
+| **Forno** | o que está fundindo, no que vai virar, o que já está pronto, o combustível, a **barra de progresso** e o quanto falta queimar |
+| **Mineradora** | o minério que está tirando, o **total que ainda dá para tirar** embaixo dela, quanto tempo até acabar, o buffer, a progressão e a queima |
+| **Baú** | a lista do que tem dentro, com ícone e quantidade |
+| **Esteira** | quantos itens em cada faixa e o que está passando |
+| **Inseridor** | o que está na mão dele, o combustível, de onde pega e onde põe |
+| **Chão** | o tipo de terreno e se dá para construir ali |
+
+As barras andam sozinhas com o mouse parado: dá para ficar olhando o forno
+trabalhar pelo mapa, sem ir até lá.
 
 ### 5.5 Recursos — **todos finitos**
 | Recurso | Onde vem | Observação |
@@ -205,6 +222,13 @@ você a expandir. Nada renasce.
 > mundo, já aparecem no mapa e já podem ser coletados e guardados. **O que cada um
 > faz ainda vai ser definido** — por enquanto só ouro (→ placa) e areia (→ vidro)
 > têm receita.
+
+**⏳ Areia, argila e terra vão deixar de ser jazida (decisão de 02/09/2026).** Hoje
+elas são depósitos iguais aos de minério: uma mancha com quantidade por tile, que
+acaba e some. O Vandré decidiu que **não vão ser assim — nem vão ser jazidas.**
+Como elas vão funcionar ainda vai ser definido com ele; até lá, o que está no jogo
+é provisório. Isso mexe na geração do mundo (§5.3), na tabela acima e na legenda do
+mapa.
 
 ### 5.6 Coleta manual
 - Segurar o **botão esquerdo do mouse** em cima do recurso, dentro do alcance.
@@ -501,17 +525,23 @@ regiões viraram células com centro sorteado e fronteira embaralhada por ruído
 
 ## 9.5 📍 Onde paramos
 
-**02/09/2026 — v0.8.1, Fase 2 concluída + o quadriculado do mapa resolvido.**
+**02/09/2026 — v0.8.2, Fase 2 concluída + mapa arrumado.**
 
 Funcionando: mundo finito por semente, coleta manual, inventário e fabricação,
 construção, forno, mineradora, baú, **esteiras de duas faixas com side-load e curva
 automática**, **inseridores**, minimapa e mapa, save em 5 slots. As 4 picaretas
 existem como item com a arte pronta, mas ainda **não fazem nada**.
 
-O mapa não mostra mais o quadriculado dos chunks (§5.3 e §8.5). **Mundos antigos
-salvos continuam abrindo, mas o mapa deles muda**: o save guarda só o que você
-mexeu, o resto é regerado — então as jazidas que você ainda não tocou aparecem
-redistribuídas.
+O mapa não mostra mais o quadriculado dos chunks (§5.3 e §8.5), e ganhou o
+**inspetor na coluna da direita** (§5.4): passar o mouse por um lugar mostra ali o
+que tem nele, com ícone — o processo dentro do forno, o que a mineradora ainda tem
+para tirar, o conteúdo da jazida.
+
+**Mundos antigos salvos continuam abrindo, mas o mapa deles muda**: o save guarda só
+o que você mexeu, o resto é regerado — então as jazidas que você ainda não tocou
+aparecem redistribuídas.
+
+**Combinado sobre o git:** commit a cada entrega, mas o `push` só quando ele pedir.
 
 **O próximo passo do roadmap é a Fase 3 (Montadora)** — mas confirmar com o Vandré
 antes, porque ele costuma testar e trazer ajustes primeiro.
@@ -526,6 +556,7 @@ cores que faltam estão no `CORES.md`.
 
 | Data | O que mudou |
 |---|---|
+| 02/09/2026 | **v0.8.2** — **Inspetor no mapa** (§5.4): passar o mouse por qualquer lugar do mapa mostra na coluna da direita, embaixo da legenda e com ícone, o que tem ali — a jazida com o quanto sobrou no quadrado e na mancha inteira, o forno com o que está fundindo e a barra de progresso, a mineradora com o total que ainda dá para tirar e quanto tempo falta, o baú com o conteúdo, a esteira com as duas faixas e o inseridor com o que está na mão. As barras andam sozinhas com o mouse parado. O texto de hover saiu do rodapé do mapa e virou esse painel. Novo teste `11-inspetor-do-mapa.js`. Registradas duas decisões dele: **areia, argila e terra vão deixar de ser jazidas** (§5.5, a definir) e o **`git push` passa a esperar a ordem dele**. |
 | 02/09/2026 | **v0.8.1** — Acabou o **quadriculado dos chunks no mapa** (§8.5): a região de minério deixou de ser o quadrado do chunk e virou uma célula com centro sorteado (estilo Voronoi), com o ponto de consulta embaralhado por duas ondas de ruído — uma grande que entorta a fronteira e uma miúda que solta ilhotas. As proporções passaram a ser repartidas por **área** de região, porque agora as regiões têm tamanhos diferentes. Novo teste `10-regioes.js`, que mede o quadriculado em número em vez de olhar a tela. Corrigido um teste frágil no `08` (procurava carvão numa semente e usava a coordenada em outra). Efeito colateral bom: sementes com começo pobre praticamente sumiram (era ~1 em 40, agora 0 em 120). |
 | 21/08/2026 | Doc criado com a pesquisa dos 3 jogos. Fase 0 (menu) implementada. |
 | 21/08/2026 | **v0.2** — Correções do Vandré: objetivo = sair do planeta; recursos **finitos**; fora árvore de habilidades, respawn, ilhas, economia, NPCs e frascos de ciência; esteiras/blueprints/robôs/inimigos remarcados para fases futuras; `E` abre inventário; adicionada a especificação de arte (§7). **Fase 1 implementada.** |

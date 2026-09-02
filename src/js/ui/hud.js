@@ -616,6 +616,8 @@
   var TILES_MINI = 72;          // quantos tiles cabem no minimapa
   var mapaInfo = null;
   var mapaCanvas = null;
+  var mapaHover = null;         // tile sob o mouse no mapa grande
+  var inspAssinatura = null;    // só remonta o inspetor quando muda de verdade
 
   function alternarMapa() {
     if (el.janelas.querySelector('.j-mapa')) { fecharTudo(); return; }
@@ -640,6 +642,13 @@
     var lateral = document.createElement('div');
     lateral.className = 'mapa-legenda';
     lateral.innerHTML = montarLegenda();
+
+    // o que está sob o mouse aparece aqui embaixo, com ícone
+    var insp = document.createElement('div');
+    insp.className = 'mapa-inspetor';
+    insp.id = 'mapa-inspetor';
+    lateral.appendChild(insp);
+
     wrap.appendChild(lateral);
 
     corpo.appendChild(wrap);
@@ -651,28 +660,26 @@
       ' tiles (' + C.MUNDO_CHUNKS + '×' + C.MUNDO_CHUNKS + ' chunks).';
     corpo.appendChild(rodape);
 
+    mapaHover = null;
+    inspAssinatura = null;
+
     mapaCanvas.addEventListener('mousemove', function (ev) {
       if (!mapaInfo) return;
       var r = mapaCanvas.getBoundingClientRect();
       var p = global.FZ.Minimap.mapaParaMundo(mapaInfo,
         (ev.clientX - r.left) * (mapaCanvas.width / r.width),
         (ev.clientY - r.top) * (mapaCanvas.height / r.height));
-      var tx = Math.floor(p.x), ty = Math.floor(p.y);
-      var texto = '(' + tx + ', ' + ty + ')';
-      if (World.dentroDoMundo(tx, ty)) {
-        var ent = World.entityAt(tx, ty);
-        var res = World.resAt(tx, ty);
-        if (ent) texto += ' — ' + D.building(ent.tipo).nome;
-        else if (res) texto += ' — ' + D.resInfo(res).nome + ' (' + World.amountAt(tx, ty) + ')';
-        else texto += ' — ' + D.terrainInfo(World.terrainAt(tx, ty)).nome;
-      } else {
-        texto += ' — fora do mundo';
-      }
-      var el2 = document.getElementById('mapa-info');
-      if (el2) el2.textContent = texto;
+      mapaHover = { tx: Math.floor(p.x), ty: Math.floor(p.y) };
+      atualizarInspetorMapa();
+    });
+
+    mapaCanvas.addEventListener('mouseleave', function () {
+      mapaHover = null;
+      atualizarInspetorMapa();
     });
 
     desenharMapaGrande();
+    atualizarInspetorMapa();
   }
 
   function montarLegenda() {
@@ -699,6 +706,267 @@
     if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M';
     if (n >= 1000) return (n / 1000).toFixed(1) + 'k';
     return String(n);
+  }
+
+  /* ---------------- inspetor do mapa ----------------
+     Passar o mouse pelo mapa mostra aqui do lado o que tem naquele
+     lugar: a jazida com o quanto ainda existe, ou a máquina com o
+     que está acontecendo dentro dela. */
+
+  function atualizarInspetorMapa() {
+    var box = document.getElementById('mapa-inspetor');
+    if (!box) { inspAssinatura = null; return; }
+
+    var d = mapaHover ? lerLugar(mapaHover.tx, mapaHover.ty) : {
+      assinatura: 'nada',
+      html: tituloInsp() + '<p class="insp-vazio">Passe o mouse pelo mapa.</p>',
+      prog: null, chama: null
+    };
+
+    if (d.assinatura !== inspAssinatura) {
+      inspAssinatura = d.assinatura;
+      box.innerHTML = d.html;
+      pintarIcones(box);
+    }
+
+    // as barras andam sozinhas, sem remontar o painel
+    var bp = box.querySelector('.insp-b.prog > i');
+    if (bp) bp.style.width = Math.round(Math.min(1, Math.max(0, d.prog || 0)) * 100) + '%';
+    var bc = box.querySelector('.insp-b.chama > i');
+    if (bc) bc.style.width = Math.round(Math.min(1, Math.max(0, d.chama || 0)) * 100) + '%';
+  }
+
+  function tituloInsp() { return '<h4>No cursor</h4>'; }
+
+  function lerLugar(tx, ty) {
+    var coord = '(' + tx + ', ' + ty + ')';
+    if (!World.dentroDoMundo(tx, ty)) {
+      return {
+        assinatura: 'fora',
+        html: tituloInsp() + '<p class="insp-vazio">Fora do mundo.</p>',
+        prog: null, chama: null
+      };
+    }
+
+    var ent = World.entityAt(tx, ty);
+    if (ent) return lugarMaquina(ent, coord);
+
+    var res = World.resAt(tx, ty);
+    if (res) return lugarJazida(res, tx, ty, coord);
+
+    var t = D.terrainInfo(World.terrainAt(tx, ty));
+    return {
+      assinatura: 'chao:' + t.key + ':' + coord,
+      html: tituloInsp() +
+        cabecalhoCor(t.cor, t.nome, t.solido ? 'Não dá para passar' : 'Chão livre', coord) +
+        '<p class="insp-nota">' + (t.solido ? 'Nem para construir.' : 'Dá para construir aqui.') + '</p>',
+      prog: null, chama: null
+    };
+  }
+
+  /* ---- jazida ---- */
+
+  function lugarJazida(res, tx, ty, coord) {
+    var info = D.resInfo(res);
+    var aqui = World.amountAt(tx, ty);
+    var toda = totalDaJazida(tx, ty, res);
+
+    var html = tituloInsp() +
+      cabecalhoItem(info.item, info.nome, 'Rende ' + D.itemNome(info.item), coord) +
+      '<ul class="insp-lista">' +
+      linhaItem(info.item, 'Neste quadrado', formatarNumero(aqui)) +
+      linhaItem(null, 'A jazida inteira', formatarNumero(toda)) +
+      '</ul>';
+    if (info.aviso) html += '<p class="insp-nota aviso">' + info.aviso + '</p>';
+    else if (!info.mao) html += '<p class="insp-nota aviso">Não dá para tirar na mão.</p>';
+
+    return { assinatura: 'jaz:' + coord + ':' + aqui + ':' + toda, html: html, prog: null, chama: null };
+  }
+
+  /* Uma jazida é a mancha ligada do mesmo minério. O total vale para
+     todos os tiles dela, então guarda todos de uma vez — andar com o
+     mouse dentro da mesma jazida não recalcula nada. */
+  var manchaCache = { t: -1, tot: {} };
+
+  function totalDaJazida(tx, ty, res) {
+    var agora = Date.now() / 1000;
+    if (agora - manchaCache.t > 1.5) manchaCache = { t: agora, tot: {} };
+    var chave = tx + ',' + ty;
+    if (manchaCache.tot[chave] !== undefined) return manchaCache.tot[chave];
+
+    var fila = [[tx, ty]], vistos = {}, membros = [], soma = 0;
+    vistos[chave] = 1;
+    while (fila.length && membros.length < 6000) {
+      var pt = fila.pop(), x = pt[0], y = pt[1];
+      if (World.resAt(x, y) !== res) continue;
+      membros.push(x + ',' + y);
+      soma += World.amountAt(x, y);
+      var viz = [[x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]];
+      for (var i = 0; i < 4; i++) {
+        var vx = viz[i][0], vy = viz[i][1], vk = vx + ',' + vy;
+        if (vistos[vk] || !World.dentroDoMundo(vx, vy)) continue;
+        vistos[vk] = 1;
+        fila.push(viz[i]);
+      }
+    }
+    for (var j = 0; j < membros.length; j++) manchaCache.tot[membros[j]] = soma;
+    return soma;
+  }
+
+  /* ---- máquina ---- */
+
+  function lugarMaquina(e, coord) {
+    var b = D.building(e.tipo);
+    var est = Entities.estado(e);
+    var linhas = '', nota = '', prog = null, chama = null;
+    var sig = 'maq:' + e.id + ':' + est;
+
+    if (b.tipo === 'furnace') {
+      var entrada = e.inv.input[0], saida = e.inv.output[0];
+      var receita = entrada ? D.SMELTING[entrada.item] : null;
+      linhas += linhaSlot(entrada, 'Fundindo', 'nada dentro');
+      linhas += linhaSlot(saida, 'Já pronto', 'nada pronto');
+      linhas += linhaSlot(e.inv.fuel[0], 'Combustível', 'sem combustível');
+      if (receita) nota = 'Vira ' + D.itemNome(receita.saida) + ' a cada ' + receita.tempo + ' s';
+      prog = e.progresso;
+      chama = e.queimaMax > 0 ? e.queima / e.queimaMax : 0;
+      sig += ':' + assinaturaSlots([entrada, saida, e.inv.fuel[0]]);
+
+    } else if (b.tipo === 'drill') {
+      var alvo = Entities.jazidaSob(e);
+      var sob = minerioSob(e);
+      if (alvo) {
+        linhas += linhaItem(alvo.info.item, 'Tirando', D.itemNome(alvo.info.item));
+        linhas += linhaItem(null, 'Ainda dá para tirar', formatarNumero(sob));
+        nota = 'Tira ' + b.velocidade + ' por segundo — dá ' +
+          tempoCurto(sob / b.velocidade) + ' até acabar embaixo dela';
+      } else {
+        linhas += linhaItem(null, 'Jazida embaixo', 'acabou');
+      }
+      linhas += linhaSlot(e.inv.output[0], 'No buffer', 'vazio');
+      linhas += linhaSlot(e.inv.fuel[0], 'Combustível', 'sem combustível');
+      prog = e.progresso;
+      chama = e.queimaMax > 0 ? e.queima / e.queimaMax : 0;
+      sig += ':' + sob + ':' + assinaturaSlots([e.inv.output[0], e.inv.fuel[0]]);
+
+    } else if (b.tipo === 'chest') {
+      var itens = agrupar(e.inv.geral);
+      if (!itens.length) linhas += linhaItem(null, 'Vazio', '—');
+      for (var i = 0; i < itens.length && i < 6; i++)
+        linhas += linhaItem(itens[i].item, D.itemNome(itens[i].item), formatarNumero(itens[i].n));
+      if (itens.length > 6) nota = 'e mais ' + (itens.length - 6) + ' tipo(s)';
+      sig += ':' + itens.map(function (o) { return o.item + o.n; }).join(',');
+
+    } else if (b.tipo === 'belt') {
+      Entities.garantirFaixas(e);
+      var todos = agrupar(e.faixas[0].concat(e.faixas[1]));
+      linhas += linhaItem(null, 'Faixa esquerda', e.faixas[0].length + '/' + b.capacidade);
+      linhas += linhaItem(null, 'Faixa direita', e.faixas[1].length + '/' + b.capacidade);
+      for (var k = 0; k < todos.length && k < 4; k++)
+        linhas += linhaItem(todos[k].item, D.itemNome(todos[k].item), String(todos[k].n));
+      sig += ':' + e.faixas[0].length + ':' + e.faixas[1].length + ':' +
+        todos.map(function (o) { return o.item + o.n; }).join(',');
+
+    } else if (b.tipo === 'inserter') {
+      linhas += linhaItem(e.segurando, 'Na mão', e.segurando ? D.itemNome(e.segurando) : 'nada');
+      linhas += linhaSlot(e.inv.fuel[0], 'Combustível', 'sem combustível');
+      nota = 'Pega do ' + nomeDir((e.dir + 2) % 4) + ' e põe no ' + nomeDir(e.dir);
+      chama = e.queimaMax > 0 ? e.queima / e.queimaMax : 0;
+      sig += ':' + (e.segurando || '-') + ':' + assinaturaSlots([e.inv.fuel[0]]);
+    }
+
+    var html = tituloInsp() + cabecalhoItem(e.tipo, b.nome, est, coord);
+    if (linhas) html += '<ul class="insp-lista">' + linhas + '</ul>';
+    if (prog !== null) html += medidor('Progresso', 'prog');
+    if (chama !== null) html += medidor('Queimando', 'chama');
+    if (nota) html += '<p class="insp-nota">' + nota + '</p>';
+
+    return { assinatura: sig, html: html, prog: prog, chama: chama };
+  }
+
+  /** Quanto de jazida ainda existe debaixo da máquina inteira. */
+  function minerioSob(e) {
+    var total = 0;
+    for (var dy = 0; dy < e.h; dy++) {
+      for (var dx = 0; dx < e.w; dx++) {
+        var res = World.resAt(e.x + dx, e.y + dy);
+        if (!res) continue;
+        var info = D.resInfo(res);
+        if (info && info.emCima) total += World.amountAt(e.x + dx, e.y + dy);
+      }
+    }
+    return total;
+  }
+
+  function agrupar(slots) {
+    var mapa = {}, ordem = [];
+    for (var i = 0; i < slots.length; i++) {
+      var s = slots[i];
+      if (!s) continue;
+      var item = s.item;
+      if (mapa[item] === undefined) { mapa[item] = 0; ordem.push(item); }
+      mapa[item] += (s.count || 1);
+    }
+    return ordem.map(function (it) { return { item: it, n: mapa[it] }; });
+  }
+
+  function assinaturaSlots(lista) {
+    var out = '';
+    for (var i = 0; i < lista.length; i++)
+      out += (lista[i] ? lista[i].item + lista[i].count : '-') + '|';
+    return out;
+  }
+
+  function tempoCurto(seg) {
+    if (seg >= 3600) return Math.round(seg / 3600) + ' h';
+    if (seg >= 60) return Math.round(seg / 60) + ' min';
+    return Math.round(seg) + ' s';
+  }
+
+  /* ---- pedaços de HTML ---- */
+
+  function cabecalhoItem(item, nome, sub, coord) {
+    return '<div class="insp-topo">' +
+      '<span class="insp-ic g" data-item="' + item + '"></span>' +
+      '<div><b>' + nome + '</b><em>' + sub + '</em></div>' +
+      '</div><p class="insp-coord">' + coord + '</p>';
+  }
+
+  function cabecalhoCor(cor, nome, sub, coord) {
+    return '<div class="insp-topo">' +
+      '<span class="insp-cor" style="background:' + cor + '"></span>' +
+      '<div><b>' + nome + '</b><em>' + sub + '</em></div>' +
+      '</div><p class="insp-coord">' + coord + '</p>';
+  }
+
+  function linhaItem(item, rotulo, valor) {
+    return '<li>' +
+      (item ? '<span class="insp-ic" data-item="' + item + '"></span>'
+            : '<span class="insp-ic vazio"></span>') +
+      '<span>' + rotulo + '</span><b>' + valor + '</b></li>';
+  }
+
+  function linhaSlot(slot, rotulo, vazio) {
+    if (!slot) return linhaItem(null, rotulo, vazio);
+    return linhaItem(slot.item, rotulo, D.itemNome(slot.item) + ' ×' + slot.count);
+  }
+
+  function medidor(rotulo, classe) {
+    return '<div class="insp-medidor"><span>' + rotulo + '</span>' +
+      '<div class="insp-b ' + classe + '"><i></i></div></div>';
+  }
+
+  function pintarIcones(box) {
+    var ics = box.querySelectorAll('.insp-ic[data-item]');
+    for (var i = 0; i < ics.length; i++) {
+      var tam = ics[i].classList.contains('g') ? 32 : 18;
+      var cv = document.createElement('canvas');
+      cv.width = tam; cv.height = tam;
+      var cx = cv.getContext('2d');
+      cx.imageSmoothingEnabled = false;
+      Sprites.drawItem(cx, ics[i].dataset.item, 0, 0, tam);
+      ics[i].appendChild(cv);
+    }
   }
 
   function desenharMapaGrande() {
@@ -843,6 +1111,7 @@
       if (temJanela()) atualizar();
       else atualizarHotbar();
       desenharMinimapa();
+      if (mapaCanvas) atualizarInspetorMapa();
     }
 
     if (mapaCanvas) desenharMapaGrande();
@@ -909,6 +1178,7 @@
     abrirPainel: abrirPainel,
     fecharPainel: fecharTudo,
     escape: escape,
-    mouseSobreUi: mouseSobreUi
+    mouseSobreUi: mouseSobreUi,
+    lerLugarDoMapa: lerLugar    // exposto para o teste do inspetor
   };
 })(window);

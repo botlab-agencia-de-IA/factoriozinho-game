@@ -56,10 +56,10 @@ servidor local com o Node e abre o jogo em `http://localhost:8080`).
 
 ## 🧪 Testes
 
-Duplo clique no **`testar.bat`** (ou `node testes/rodar-tudo.js`). Ele roda 10
+Duplo clique no **`testar.bat`** (ou `node testes/rodar-tudo.js`). Ele roda 11
 conjuntos de testes que verificam o mundo, os recursos finitos, o inventário, o
-forno, a mineradora, as esteiras de duas faixas, os inseridores, as curvas e o
-desenho das regiões de minério — tudo sem precisar abrir o jogo.
+forno, a mineradora, as esteiras de duas faixas, os inseridores, as curvas, o
+desenho das regiões de minério e o inspetor do mapa — tudo sem precisar abrir o jogo.
 
 ---
 
@@ -76,7 +76,9 @@ Funcionando: mundo finito de 320×320 tiles gerado por semente, personagem, cole
 manual, recursos finitos que somem do mapa, inventário e fabricação, construção,
 **forno**, **mineradora**, **baú**, **esteiras de duas faixas com curva automática**,
 **inseridores**, minimapa e mapa completo, e save em 5 slots. As regiões de minério
-se misturam em fronteiras tortas, sem o quadriculado dos chunks.
+se misturam em fronteiras tortas, sem o quadriculado dos chunks. No mapa, passar o
+mouse por um lugar mostra na coluna da direita o que tem ali: o conteúdo da jazida,
+o que o forno está fundindo, o quanto a mineradora ainda tem para tirar.
 
 O roadmap completo, com o que já foi feito e o que vem a seguir, está no
 [`GDD.md`](GDD.md).

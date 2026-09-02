@@ -216,6 +216,83 @@ body.jogando .screen.is-active {
   font-variant-numeric: tabular-nums;
 }
 
+/* ---- inspetor: o que está sob o mouse no mapa ---- */
+
+.mapa-inspetor {
+  margin-top: .8rem;
+  padding: .6rem .7rem .7rem;
+  background: var(--bg-0);
+  border: 1px solid var(--line-soft);
+  border-radius: 6px;
+  min-height: 118px;
+}
+.mapa-inspetor h4 { margin-bottom: .5rem; }
+.insp-vazio { color: var(--txt-faint); font-size: .74rem; line-height: 1.5; }
+
+.insp-topo { display: flex; align-items: center; gap: .5rem; }
+.insp-topo > div { min-width: 0; }
+.insp-topo b { display: block; font-size: .82rem; color: var(--txt); }
+.insp-topo em { display: block; font-style: normal; font-size: .72rem; color: var(--green); }
+
+.insp-ic { display: block; width: 18px; height: 18px; flex-shrink: 0; }
+.insp-ic.g { width: 32px; height: 32px; }
+.insp-ic canvas { display: block; width: 100%; height: 100%; image-rendering: pixelated; }
+.insp-ic.vazio {
+  border: 1px dashed var(--line-soft);
+  border-radius: 3px;
+  opacity: .4;
+}
+.insp-cor {
+  width: 24px; height: 24px;
+  border-radius: 3px;
+  border: 1px solid rgba(0,0,0,.5);
+  flex-shrink: 0;
+}
+
+.insp-coord {
+  margin: .35rem 0 .45rem;
+  font-size: .7rem;
+  color: var(--txt-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+.insp-lista { list-style: none; }
+.insp-lista li {
+  display: flex;
+  align-items: center;
+  gap: .45rem;
+  padding: .18rem 0;
+  border-bottom: 1px solid var(--line-soft);
+}
+.insp-lista li:last-child { border-bottom: 0; }
+.insp-lista li > span:not(.insp-ic) { flex: 1; color: var(--txt-dim); font-size: .74rem; }
+.insp-lista b {
+  color: var(--txt);
+  font-size: .72rem;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.insp-medidor { display: flex; align-items: center; gap: .5rem; margin-top: .4rem; }
+.insp-medidor span { width: 68px; flex-shrink: 0; font-size: .7rem; color: var(--txt-faint); }
+.insp-b {
+  flex: 1;
+  height: 6px;
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.insp-b i { display: block; height: 100%; width: 0; }
+.insp-b.prog i { background: var(--green); transition: width .12s linear; }
+.insp-b.chama i {
+  background: linear-gradient(90deg, var(--orange-dark), var(--amber));
+  transition: width .3s linear;
+}
+
+.insp-nota { margin-top: .5rem; font-size: .7rem; color: var(--txt-faint); line-height: 1.45; }
+.insp-nota.aviso { color: var(--amber); }
+
 @media (max-width: 900px) {
   .mapa-wrap { flex-direction: column; }
   .mapa-legenda { width: 100%; }
