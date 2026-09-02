@@ -63,7 +63,7 @@ global.setTimeout=setTimeout; global.clearTimeout=clearTimeout;
 
 // ---- carrega na ordem do index.html ----
 const html=fs.readFileSync(RAIZ+'/index.html','utf8');
-const ordem=[...html.matchAll(/src="(src\/js[^"]+)"/g)].map(m=>m[1]);
+const ordem=[...html.matchAll(/src="(src\/js[^"]+)"/g)].map(m=>m[1].replace(/\?.*$/,''));  // sem o ?v= do cache
 console.log('Carregando '+ordem.length+' scripts na ordem do index.html...\n');
 for(const f of ordem){
   try { eval(fs.readFileSync(RAIZ+'/'+f,'utf8')); console.log('  ✔ '+f); }

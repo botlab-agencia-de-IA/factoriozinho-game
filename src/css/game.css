@@ -83,25 +83,33 @@ body.jogando .screen.is-active {
 .aviso.info  { border-left-color: var(--blue); }
 
 /* informação do que está sob o cursor */
-#cursor-info {
+/* painel do que está sob o cursor, embaixo do minimapa */
+#inspetor {
   position: absolute;
-  top: 12px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: rgba(20,22,26,.8);
+  top: 204px;
+  right: 12px;
+  width: 204px;
+  padding: .55rem .6rem .6rem;
+  background: rgba(20,22,26,.88);
   border: 1px solid var(--line-soft);
-  border-radius: 5px;
-  padding: .25rem .8rem;
-  font-size: .82rem;
-  color: var(--txt-dim);
+  border-radius: 6px;
   pointer-events: none;
-  white-space: nowrap;
-  max-width: 90vw;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
-#cursor-info:empty { display: none; }
-#cursor-info i { color: var(--txt-faint); font-style: normal; }
+#inspetor:empty { display: none; }
+
+.insp-mao {
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+  margin-top: .5rem;
+  padding-top: .5rem;
+  border-top: 1px solid var(--line-soft);
+  font-size: .72rem;
+  color: var(--txt-dim);
+}
+.insp-mao:first-child { margin-top: 0; padding-top: 0; border-top: 0; }
+.insp-mao b { color: var(--txt); }
+.insp-mao em { margin-left: auto; font-style: normal; color: var(--txt-faint); white-space: nowrap; }
 
 /* ajuda de teclas */
 #ajuda-teclas {
@@ -297,6 +305,7 @@ body.jogando .screen.is-active {
   .mapa-wrap { flex-direction: column; }
   .mapa-legenda { width: 100%; }
   #minimapa { width: 130px; height: 130px; }
+  #inspetor { top: 154px; width: 176px; }
 }
 
 /* ---------------- slots ---------------- */
@@ -458,6 +467,18 @@ body.jogando .screen.is-active {
 
 /* receitas */
 .lista-receitas { display: flex; flex-direction: column; gap: 3px; margin-bottom: .8rem; }
+
+.secao-receitas {
+  margin: .7rem 0 .15rem;
+  font-size: .68rem;
+  font-weight: 700;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  color: var(--txt-faint);
+  border-bottom: 1px solid var(--line-soft);
+  padding-bottom: .18rem;
+}
+.secao-receitas:first-child { margin-top: 0; }
 
 .receita {
   display: flex;

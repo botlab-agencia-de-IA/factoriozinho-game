@@ -91,7 +91,7 @@
      jazidas paravam em linha reta na borda do chunk e dava para ver o
      quadriculado no mapa (§8.5). */
   var RIQUEZA_ESCALA = 16;
-  var RIQUEZA_THR = 0.628;
+  var RIQUEZA_THR = 0.610;
 
   /* O quanto o centro da célula pode sair do meio do chunk (em chunks). */
   var REGIAO_JITTER = 0.42;
@@ -99,6 +99,11 @@
   var WARP_ESCALA = 26, WARP_AMP = 64;
   /* Onda miúda: solta ilhotas de um minério dentro do vizinho. */
   var ILHA_ESCALA = 8, ILHA_AMP = 18;
+  /* Faixa sem jazida nenhuma entre duas regiões vizinhas. Sem ela dois
+     minérios diferentes nascem encostados um no outro e a divisa entre
+     as duas regiões — que é uma reta, porque é fronteira de Voronoi —
+     fica desenhada no mapa em minério. */
+  var BORDA_MORTA = 7;
 
   var PROPORCAO_REGIOES = [
     [RES.COAL,    20],
@@ -173,6 +178,11 @@
     return lista;
   }
 
+  /* O quanto o último tile consultado estava longe da divisa entre duas
+     regiões, em tiles. Fica numa variável em vez de virar objeto: isso
+     roda em cima de milhares de tiles na geração. */
+  var margemDaDivisa = 0;
+
   /** Em que célula este tile cai. */
   function celulaEm(x, y) {
     var seed = state.seedNum;
@@ -192,7 +202,7 @@
        busca vira uma borda reta e o quadriculado volta. */
     var gx = Math.floor(wx / CHUNK) - c0;
     var gy = Math.floor(wy / CHUNK) - c0;
-    var melhor = -1, melhorD = Infinity;
+    var melhor = -1, melhorD = Infinity, segundoD = Infinity;
     for (var dy = -2; dy <= 2; dy++) {
       var ry2 = gy + dy;
       if (ry2 < 0 || ry2 >= N) continue;
@@ -202,9 +212,12 @@
         var k2 = ry2 * N + rx2;
         var ex = regiaoCx[k2] - wx, ey = regiaoCy[k2] - wy;
         var d2 = ex * ex + ey * ey;
-        if (d2 < melhorD) { melhorD = d2; melhor = k2; }
+        if (d2 < melhorD) { segundoD = melhorD; melhorD = d2; melhor = k2; }
+        else if (d2 < segundoD) { segundoD = d2; }
       }
     }
+    /* perto da divisa as duas células mais próximas empatam */
+    margemDaDivisa = segundoD === Infinity ? 999 : Math.sqrt(segundoD) - Math.sqrt(melhorD);
     return melhor;
   }
 
@@ -330,9 +343,15 @@
         /* --- jazidas duras --- */
         var riqueza = R.fbm(x / RIQUEZA_ESCALA, y / RIQUEZA_ESCALA, seed + 100, 3);
         if (riqueza > RIQUEZA_THR) {
-          res[i] = minerioDaRegiao(x, y);
-          amount[i] = Math.round(180 + (riqueza - RIQUEZA_THR) * 7000);
-          continue;
+          var minerio = minerioDaRegiao(x, y);
+          /* em cima da divisa entre duas regiões não nasce jazida: é o
+             que impede dois minérios de crescerem colados e some com a
+             linha reta que a divisa desenharia */
+          if (margemDaDivisa > BORDA_MORTA) {
+            res[i] = minerio;
+            amount[i] = Math.round(180 + (riqueza - RIQUEZA_THR) * 7000);
+            continue;
+          }
         }
 
         /* --- depósitos de superfície (areia, terra, argila) --- */

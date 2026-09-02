@@ -112,19 +112,36 @@
     inserter:     { nome: 'Inseridor',           stack: STACK, constroi: 'inserter',      cor: '#c4a33a', forma: 'braco' }
   };
 
-  /* ---------------- receitas de mão ---------------- */
-  var HAND_RECIPES = [
-    { saida: 'wood_pickaxe',   qtd: 1, tempo: 1.0, custo: { wood: 5 } },
-    { saida: 'stone_pickaxe',  qtd: 1, tempo: 1.0, custo: { wood: 2, stone: 3 } },
-    { saida: 'iron_pickaxe',   qtd: 1, tempo: 1.5, custo: { wood: 2, iron_plate: 3 } },
-    { saida: 'gold_pickaxe',   qtd: 1, tempo: 2.0, custo: { wood: 2, gold_plate: 3 } },
-    { saida: 'stone_furnace',  qtd: 1, tempo: 1.0, custo: { stone: 5 } },
-    { saida: 'wooden_chest',   qtd: 1, tempo: 0.5, custo: { wood: 4 } },
-    { saida: 'iron_gear',      qtd: 1, tempo: 0.5, custo: { iron_plate: 2 } },
-    { saida: 'transport_belt', qtd: 2, tempo: 0.5, custo: { iron_gear: 1, iron_plate: 1 } },
-    { saida: 'inserter',       qtd: 1, tempo: 0.5, custo: { iron_gear: 1, iron_plate: 1, copper_plate: 1 } },
-    { saida: 'burner_drill',   qtd: 1, tempo: 2.0, custo: { iron_gear: 3, iron_plate: 3, stone_furnace: 1 } }
+  /* ---------------- receitas de mão ----------------
+     cat = em que seção da tela de fabricação a receita aparece
+     (ferramenta / estrutura / item) */
+  var CATEGORIAS = [
+    { id: 'ferramenta', nome: 'Ferramentas' },
+    { id: 'estrutura',  nome: 'Estruturas'  },
+    { id: 'item',       nome: 'Itens'       }
   ];
+
+  var HAND_RECIPES = [
+    { saida: 'wood_pickaxe',   qtd: 1, tempo: 1.0, cat: 'ferramenta', custo: { wood: 5 } },
+    { saida: 'stone_pickaxe',  qtd: 1, tempo: 1.0, cat: 'ferramenta', custo: { wood: 2, stone: 3 } },
+    { saida: 'iron_pickaxe',   qtd: 1, tempo: 1.5, cat: 'ferramenta', custo: { wood: 2, iron_plate: 3 } },
+    { saida: 'gold_pickaxe',   qtd: 1, tempo: 2.0, cat: 'ferramenta', custo: { wood: 2, gold_plate: 3 } },
+    { saida: 'stone_furnace',  qtd: 1, tempo: 1.0, cat: 'estrutura',  custo: { stone: 5 } },
+    { saida: 'wooden_chest',   qtd: 1, tempo: 0.5, cat: 'estrutura',  custo: { wood: 4 } },
+    { saida: 'burner_drill',   qtd: 1, tempo: 2.0, cat: 'estrutura',  custo: { iron_gear: 3, iron_plate: 3, stone_furnace: 1 } },
+    { saida: 'transport_belt', qtd: 2, tempo: 0.5, cat: 'estrutura',  custo: { iron_gear: 1, iron_plate: 1 } },
+    { saida: 'inserter',       qtd: 1, tempo: 0.5, cat: 'estrutura',  custo: { iron_gear: 1, iron_plate: 1, copper_plate: 1 } },
+    { saida: 'iron_gear',      qtd: 1, tempo: 0.5, cat: 'item',       custo: { iron_plate: 2 } }
+  ];
+
+  /** Em que seção a receita cai. Sem 'cat' escrito, deduz pelo item. */
+  function categoriaDaReceita(r) {
+    if (r.cat) return r.cat;
+    var i = ITEMS[r.saida];
+    if (i && i.constroi) return 'estrutura';
+    if (i && i.nivel) return 'ferramenta';
+    return 'item';
+  }
 
   /* ---------------- receitas de fundição (forno) ---------------- */
   var SMELTING = {
@@ -233,6 +250,8 @@
     BUILDINGS: BUILDINGS,
     item: item,
     itemNome: itemNome,
+    CATEGORIAS: CATEGORIAS,
+    categoriaDaReceita: categoriaDaReceita,
     stackMax: stackMax,
     fuelValue: fuelValue,
     building: building,

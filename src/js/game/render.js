@@ -783,15 +783,6 @@
       ctx.fill();
     }
 
-    // barra de progresso
-    if (e.ativo && e.progresso > 0) {
-      var bw = w * 0.7, bx = px + (w - bw) / 2, by = py + h - 5;
-      ctx.fillStyle = 'rgba(0,0,0,0.55)';
-      ctx.fillRect(bx, by, bw, 4);
-      ctx.fillStyle = '#6fc26b';
-      ctx.fillRect(bx + 1, by + 1, (bw - 2) * Math.min(1, e.progresso), 2);
-    }
-
     // seta de saída
     if (b.giravel) {
       var t = Entities.tileSaida(e);

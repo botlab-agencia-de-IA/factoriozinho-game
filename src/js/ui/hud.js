@@ -33,7 +33,7 @@
     el.hud = document.getElementById('hud');
     el.hotbar = document.getElementById('hotbar');
     el.avisos = document.getElementById('avisos');
-    el.info = document.getElementById('cursor-info');
+    el.inspetor = document.getElementById('inspetor');
     el.janelas = document.getElementById('janelas');
     el.maoEl = document.getElementById('mao-cursor');
     el.minimapa = document.getElementById('minimapa-canvas');
@@ -394,7 +394,26 @@
     if (!lista) return;
     lista.innerHTML = '';
 
+    // uma seção por categoria: picareta não fica no meio de forno e baú
+    var porCat = {};
     D.HAND_RECIPES.forEach(function (r) {
+      var c = D.categoriaDaReceita(r);
+      (porCat[c] = porCat[c] || []).push(r);
+    });
+
+    D.CATEGORIAS.forEach(function (cat) {
+      var receitas = porCat[cat.id];
+      if (!receitas || !receitas.length) return;
+
+      var titulo = document.createElement('h5');
+      titulo.className = 'secao-receitas';
+      titulo.textContent = cat.nome;
+      lista.appendChild(titulo);
+
+      receitas.forEach(montarUmaReceita);
+    });
+
+    function montarUmaReceita(r) {
       var pode = PlayerLib.podeFabricar(g.player, r);
       var linha = document.createElement('button');
       linha.className = 'receita' + (pode ? '' : ' bloqueada');
@@ -427,7 +446,7 @@
         atualizar();
       });
       lista.appendChild(linha);
-    });
+    }
   }
 
   function atualizarFila() {
@@ -719,13 +738,13 @@
 
     var d = mapaHover ? lerLugar(mapaHover.tx, mapaHover.ty) : {
       assinatura: 'nada',
-      html: tituloInsp() + '<p class="insp-vazio">Passe o mouse pelo mapa.</p>',
+      html: '<p class="insp-vazio">Passe o mouse pelo mapa.</p>',
       prog: null, chama: null
     };
 
     if (d.assinatura !== inspAssinatura) {
       inspAssinatura = d.assinatura;
-      box.innerHTML = d.html;
+      box.innerHTML = tituloInsp() + d.html;
       pintarIcones(box);
     }
 
@@ -743,7 +762,7 @@
     if (!World.dentroDoMundo(tx, ty)) {
       return {
         assinatura: 'fora',
-        html: tituloInsp() + '<p class="insp-vazio">Fora do mundo.</p>',
+        html: '<p class="insp-vazio">Fora do mundo.</p>',
         prog: null, chama: null
       };
     }
@@ -757,8 +776,7 @@
     var t = D.terrainInfo(World.terrainAt(tx, ty));
     return {
       assinatura: 'chao:' + t.key + ':' + coord,
-      html: tituloInsp() +
-        cabecalhoCor(t.cor, t.nome, t.solido ? 'Não dá para passar' : 'Chão livre', coord) +
+      html: cabecalhoCor(t.cor, t.nome, t.solido ? 'Não dá para passar' : 'Chão livre', coord) +
         '<p class="insp-nota">' + (t.solido ? 'Nem para construir.' : 'Dá para construir aqui.') + '</p>',
       prog: null, chama: null
     };
@@ -771,8 +789,7 @@
     var aqui = World.amountAt(tx, ty);
     var toda = totalDaJazida(tx, ty, res);
 
-    var html = tituloInsp() +
-      cabecalhoItem(info.item, info.nome, 'Rende ' + D.itemNome(info.item), coord) +
+    var html = cabecalhoItem(info.item, info.nome, 'Rende ' + D.itemNome(info.item), coord) +
       '<ul class="insp-lista">' +
       linhaItem(info.item, 'Neste quadrado', formatarNumero(aqui)) +
       linhaItem(null, 'A jazida inteira', formatarNumero(toda)) +
@@ -870,12 +887,15 @@
     } else if (b.tipo === 'inserter') {
       linhas += linhaItem(e.segurando, 'Na mão', e.segurando ? D.itemNome(e.segurando) : 'nada');
       linhas += linhaSlot(e.inv.fuel[0], 'Combustível', 'sem combustível');
-      nota = 'Pega do ' + nomeDir((e.dir + 2) % 4) + ' e põe no ' + nomeDir(e.dir);
+      nota = 'Pega do ' + nomeDir((e.dir + 2) % 4) + ' e põe no ' + nomeDir(e.dir) + ' · R gira';
       chama = e.queimaMax > 0 ? e.queima / e.queimaMax : 0;
       sig += ':' + (e.segurando || '-') + ':' + assinaturaSlots([e.inv.fuel[0]]);
     }
 
-    var html = tituloInsp() + cabecalhoItem(e.tipo, b.nome, est, coord);
+    if (b.giravel && b.tipo !== 'inserter')
+      nota = (nota ? nota + '<br>' : '') + 'Sai para o ' + nomeDir(e.dir) + ' · R gira';
+
+    var html = cabecalhoItem(e.tipo, b.nome, est, coord);
     if (linhas) html += '<ul class="insp-lista">' + linhas + '</ul>';
     if (prog !== null) html += medidor('Progresso', 'prog');
     if (chama !== null) html += medidor('Queimando', 'chama');
@@ -954,6 +974,53 @@
   function medidor(rotulo, classe) {
     return '<div class="insp-medidor"><span>' + rotulo + '</span>' +
       '<div class="insp-b ' + classe + '"><i></i></div></div>';
+  }
+
+  /* O mesmo painel, agora no canto direito da tela do jogo: mostra o
+     que está debaixo do cursor sem precisar abrir o mapa. Fica escondido
+     quando não há nada para dizer, para não sujar a tela. */
+  var inspHudSig = null;
+
+  function atualizarInspetorHud() {
+    if (!el.inspetor) return;
+
+    if (temJanela()) { limparInspetorHud(); return; }
+
+    var c = g.cursor;
+    var dentro = World.dentroDoMundo(c.tx, c.ty);
+    var alvo = dentro && (World.entityAt(c.tx, c.ty) || World.resAt(c.tx, c.ty));
+
+    var naMao = PlayerLib.itemNaMao(g.player);
+    var construindo = (naMao && D.ITEMS[naMao] && D.ITEMS[naMao].constroi) ? naMao : null;
+
+    if (!alvo && !construindo) { limparInspetorHud(); return; }
+
+    var d = alvo ? lerLugar(c.tx, c.ty) : { assinatura: 'mao', html: '', prog: null, chama: null };
+    var sig = d.assinatura + '|' + (construindo || '-') + '|' + g.dirConstrucao;
+
+    if (sig !== inspHudSig) {
+      inspHudSig = sig;
+      el.inspetor.innerHTML = d.html + (construindo ? blocoNaMao(construindo) : '');
+      pintarIcones(el.inspetor);
+    }
+
+    var bp = el.inspetor.querySelector('.insp-b.prog > i');
+    if (bp) bp.style.width = Math.round(Math.min(1, Math.max(0, d.prog || 0)) * 100) + '%';
+    var bc = el.inspetor.querySelector('.insp-b.chama > i');
+    if (bc) bc.style.width = Math.round(Math.min(1, Math.max(0, d.chama || 0)) * 100) + '%';
+  }
+
+  function limparInspetorHud() {
+    if (inspHudSig === null) return;
+    inspHudSig = null;
+    el.inspetor.innerHTML = '';
+  }
+
+  function blocoNaMao(item) {
+    return '<div class="insp-mao">' +
+      '<span class="insp-ic" data-item="' + item + '"></span>' +
+      '<span>Na mão: <b>' + D.itemNome(item) + '</b></span>' +
+      '<em>R gira · ' + nomeDir(g.dirConstrucao) + '</em></div>';
   }
 
   function pintarIcones(box) {
@@ -1111,6 +1178,7 @@
       if (temJanela()) atualizar();
       else atualizarHotbar();
       desenharMinimapa();
+      atualizarInspetorHud();
       if (mapaCanvas) atualizarInspetorMapa();
     }
 
@@ -1127,39 +1195,6 @@
     }
     if (el.avisos.innerHTML !== html) el.avisos.innerHTML = html;
 
-    // informação do que está sob o cursor
-    atualizarInfoCursor();
-  }
-
-  function atualizarInfoCursor() {
-    var c = g.cursor;
-    var txt = '';
-
-    var ent = World.entityAt(c.tx, c.ty);
-    if (ent) {
-      var b = D.building(ent.tipo);
-      txt = '<b>' + b.nome + '</b> — ' + Entities.estado(ent);
-      if (b.giravel) {
-        txt += ' <i>·</i> ' + (b.tipo === 'inserter'
-          ? '<i>pega do <b>' + nomeDir((ent.dir + 2) % 4) + '</b>, põe no <b>' + nomeDir(ent.dir) + '</b></i>'
-          : '<i>vai para <b>' + nomeDir(ent.dir) + '</b></i>') + ' <i>· R gira</i>';
-      }
-    } else {
-      var res = World.resAt(c.tx, c.ty);
-      if (res) {
-        var ri = D.resInfo(res);
-        var qtd = World.amountAt(c.tx, c.ty);
-        txt = '<b>' + ri.nome + '</b> <i>' + qtd + '</i>';
-      }
-    }
-
-    var mao2 = PlayerLib.itemNaMao(g.player);
-    if (mao2 && D.ITEMS[mao2] && D.ITEMS[mao2].constroi) {
-      txt += (txt ? ' &nbsp;·&nbsp; ' : '') +
-        '🔨 <b>' + D.itemNome(mao2) + '</b> <i>R gira · ' + nomeDir(g.dirConstrucao) + '</i>';
-    }
-
-    if (el.info.innerHTML !== txt) el.info.innerHTML = txt;
   }
 
   function flash(msg) {

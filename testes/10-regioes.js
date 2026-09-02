@@ -101,23 +101,44 @@ for(const [nome,id,alvo] of DUROS){
 }
 ok(proporcaoOk,'todo minério existe e fica perto da proporção pedida');
 
-/* --------- as regiões se misturam de verdade --------- */
-console.log('\n=== AS REGIÕES SE MISTURAM ===');
-let comVizinhoDiferente=0, comJazida=0;
-for(let y=MIN+8;y<=MAX-8;y+=3) for(let x=MIN+8;x<=MAX-8;x+=3){
+/* --------- jazidas separadas, não grudadas ---------
+   Entre duas regiões vizinhas fica uma faixa sem jazida nenhuma. É o
+   que impede dois minérios de nascerem colados e é também o que apaga
+   a divisa entre as regiões, que é uma reta. */
+console.log('\n=== AS JAZIDAS NÃO NASCEM GRUDADAS ===');
+const DUROSET=new Set(DUROS.map(d=>d[1]));
+let colados=0, pares=0, comJazida=0, visto=new Set(), manchas=0, tilesEmMancha=0, grandes=0;
+for(let y=MIN;y<=MAX;y++) for(let x=MIN;x<=MAX;x++){
   const r=World.resAt(x,y);
-  if(!DUROS.some(d=>d[1]===r)) continue;
+  if(!DUROSET.has(r)) continue;
   comJazida++;
-  let achou=false;
-  for(let dy=-8;dy<=8&&!achou;dy+=2) for(let dx=-8;dx<=8&&!achou;dx+=2){
+  for(const [dx,dy] of [[1,0],[0,1]]){
     const o=World.resAt(x+dx,y+dy);
-    if(o && o!==r && DUROS.some(d=>d[1]===o)) achou=true;
+    if(DUROSET.has(o)){ pares++; if(o!==r) colados++; }
   }
-  if(achou) comVizinhoDiferente++;
+  const k=x+','+y;
+  if(visto.has(k)) continue;
+  const fila=[[x,y]]; visto.add(k);
+  let n=0;
+  while(fila.length){
+    const [cx,cy]=fila.pop(); n++;
+    for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){
+      const nx=cx+dx, ny=cy+dy, nk=nx+','+ny;
+      if(visto.has(nk)||!World.dentroDoMundo(nx,ny)||World.resAt(nx,ny)!==r) continue;
+      visto.add(nk); fila.push([nx,ny]);
+    }
+  }
+  manchas++; tilesEmMancha+=n;
+  if(n>=40) grandes++;
 }
-const fatiaMista=comVizinhoDiferente/comJazida;
-console.log('  '+(fatiaMista*100).toFixed(1)+'% das jazidas têm outro minério a até 8 tiles');
-ok(fatiaMista>0.05,'existem lugares onde dois minérios se encostam ('+(fatiaMista*100).toFixed(1)+'%)');
+const fatiaColada=pares?colados/pares*100:0;
+const cobertura=comJazida/(C.MUNDO_TILES*C.MUNDO_TILES)*100;
+console.log('  jazida cobre '+cobertura.toFixed(1)+'% do mapa em '+manchas+' manchas'+
+  ' (média de '+(tilesEmMancha/manchas).toFixed(0)+' tiles, '+grandes+' com 40 ou mais)');
+console.log('  vizinhança de minério diferente: '+fatiaColada.toFixed(2)+'% dos encostos');
+ok(fatiaColada<1.0,'dois minérios diferentes quase nunca se encostam ('+fatiaColada.toFixed(2)+'%, limite 1%)');
+ok(cobertura>6 && cobertura<20,'a jazida cobre uma fatia sadia do mapa ('+cobertura.toFixed(1)+'%)');
+ok(grandes>=40,'sobram jazidas grandes de verdade para pôr mineradora ('+grandes+' com 40+ tiles)');
 
 /* --------- a semente continua mandando --------- */
 console.log('\n=== MESMA SEMENTE, MESMO MUNDO ===');
