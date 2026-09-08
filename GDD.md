@@ -4,7 +4,7 @@
 > reescrever à vontade — eu leio este arquivo antes de mexer no código. Se algo
 > aqui estiver diferente do jogo, o arquivo ganha.
 >
-> Última atualização: 02/09/2026 · Versão do doc: **0.8.6** · Jogo: **v0.8.6**
+> Última atualização: 02/09/2026 · Versão do doc: **0.8.7** · Jogo: **v0.8.7**
 >
 > 📦 Código no GitHub: **botlab-agencia-de-IA/factoriozinho-game** (privado)
 > 🧪 Para testar sem abrir o jogo: duplo clique no `testar.bat`
@@ -314,6 +314,25 @@ internos das máquinas — o forno para de produzir quando a saída chega em 100
 
 ### 5.9 Automação (o coração)
 
+**Dá para andar por cima da esteira.** Ela é a única construção atravessável
+(`atravessavel: true` em `data.js`) — atravessar a própria linha faz parte de
+andar pela fábrica. Todo o resto barra o jogador.
+
+**A mineradora cospe sempre no lado DIREITO da frente dela** — direita de quem está
+dentro da máquina olhando para fora:
+
+| Ela aponta para | O item sai em |
+|---|---|
+| norte | canto de cima, à **direita** (leste) |
+| leste | canto da frente, **embaixo** (sul) |
+| sul | canto de baixo, à **esquerda** na tela (oeste) |
+| oeste | canto da frente, **em cima** (norte) |
+
+Antes o lado mudava conforme a direção — a mesma mineradora girada entregava ora de
+um lado ora do outro, e não dava para montar duas linhas iguais. Isso vale para
+qualquer máquina maior que um tile; nas de 1×1 (esteira, inseridor) frente e lado
+são o mesmo tile, então nada muda.
+
 **O inseridor pensa antes de pegar.** Ele olha o que a máquina da frente precisa
 **agora** e só pega isso. Numa esteira que leva carvão e minério junto, ele enche a
 fornalha de carvão até o limite e depois passa a levar minério, sozinho. Se nada do
@@ -611,8 +630,15 @@ nenhum na tela. Por isso todo `<script>` e `<link>` do `index.html` termina em
 ## 8.45 🔢 A matemática
 
 Os números do jogo — quanto cada máquina produz, come e queima, e as proporções que
-saem disso — moram no **`MATEMATICA.md`**, com uma proposta esperando decisão do
-Vandré. Eles não são conta de papel: o teste `16-matematica.js` monta cada máquina
+saem disso — moram no **`MATEMATICA.md`**. A regra que o Vandré fechou:
+
+> Tudo por minuto. **1 mineradora a carvão alimenta 1,5 fornalhas**; a elétrica
+> (Fase 4) vai alimentar 2,5. **Um carvão vale 30 segundos de máquina**, a madeira
+> vale 10 — três madeiras por carvão.
+
+Disso saem: fornalha 20 peças/min (3 s cada), mineradora a carvão 30 minérios/min,
+inseridor 60 itens/min (dá conta de duas mineradoras), e a conta de bolso
+`carvão/min = 2 × (mineradoras + fornalhas) + 0,6 × inseridores`. Eles não são conta de papel: o teste `16-matematica.js` monta cada máquina
 num mundo de teste, roda um minuto de jogo e conta o que entrou e o que saiu. Se
 alguém mexer numa velocidade sem querer, a bateria avisa.
 
@@ -659,7 +685,7 @@ regiões viraram células com centro sorteado e fronteira embaralhada por ruído
 
 ## 9.5 📍 Onde paramos
 
-**02/09/2026 — v0.8.6, Fase 2 concluída + correções do teste no mundo Clarita.**
+**02/09/2026 — v0.8.7, Fase 2 concluída + a matemática fechada.**
 
 Funcionando: mundo finito por semente, coleta manual, inventário e fabricação,
 construção, forno, mineradora, baú, **esteiras de duas faixas com side-load e curva
@@ -686,8 +712,11 @@ combustível na entrega automática, o inseridor a carvão se abastece sozinho, 
 mais para construir em cima do personagem e dá para construir com a estrutura presa
 no cursor (§5.2 e §5.9).
 
-**Esperando decisão dele:** a **matemática** (`MATEMATICA.md`) — os números atuais
-estão medidos e há uma proposta pronta, mas nada foi aplicado.
+A **matemática está aplicada** (`MATEMATICA.md`): 1 mineradora a carvão = 1,5
+fornalhas, 1 carvão = 30 s de máquina, 3 madeiras = 1 carvão. **Dá para andar por
+cima das esteiras** e a **mineradora cospe sempre no lado direito da frente**
+(§5.9) — isso mexe nas linhas já montadas: a esteira que recebia a mineradora
+precisa descer um tile.
 
 **Falta fazer no mapa (`M`), combinado com ele:** dar zoom no mapa com a roda,
 para poder aproximar um canto e ver as estruturas daquele pedaço.
@@ -711,6 +740,7 @@ cores que faltam estão no `CORES.md`.
 
 | Data | O que mudou |
 |---|---|
+| 02/09/2026 | **v0.8.7** — **A matemática do jogo fechada com a equação dele** (`MATEMATICA.md`): tudo por minuto, 1 mineradora a carvão = 1,5 fornalhas (a elétrica da Fase 4 = 2,5), 1 carvão = 30 s de máquina e 3 madeiras = 1 carvão. Na prática: fornalha 20 peças/min, mineradora 30 minérios/min, inseridor 60 itens/min — e o número do inseridor na configuração passou a ser o real (cada item gasta dois ciclos). **Dá para andar por cima das esteiras** (`atravessavel` em `data.js`). **A mineradora cospe sempre no lado direito da frente**, nas quatro direções — antes o lado mudava conforme a direção. Isso mexe nas linhas já montadas: a esteira que recebia a mineradora desce um tile. |
 | 02/09/2026 | **v0.8.6** — Correções do teste dele no mundo Clarita. **O inseridor ficou esperto**: olha o que a máquina da frente precisa agora e só pega isso — numa esteira com carvão e minério junto, enche a fornalha de carvão até o limite e depois passa a levar minério (§5.9). **Limite de combustível na entrega automática** (`FUEL_AUTOMATICO` = 3): máquina não empilha mais que isso em outra máquina, mas o jogador na mão enche até 100. **O inseridor a carvão se serve sozinho** do que passa atrás, senão nunca sairia do seco. **Não dá mais para construir em cima do personagem**, e quem ficou preso é empurrado para fora (era isso que dava a impressão de atravessar as esteiras — elas sempre barraram). **Dá para construir com a estrutura presa no cursor**, direto da mochila — isso tinha quebrado na v0.8.5, quando o clique com a mão cheia passou a abastecer máquina. Criado o **`MATEMATICA.md`** com os números do jogo medidos e uma proposta, e o teste `16-matematica.js` que os mede rodando a simulação. |
 | 02/09/2026 | **v0.8.5** — **O travamento no mato acabou**: as árvores eram desenhadas uma a uma (~360 por quadro numa mata fechada) e foram para dentro do desenho guardado do chunk — 16 por quadro no mesmo lugar (§8.3). Por isso a base dele rodava lisa e o mato travava: perto da base já estava desmatado. **O inventário ganhou as manhas do Factorio e do Minecraft** (§5.2): botão direito pega metade, fechar a mochila não devolve o que está na mão, clicar na máquina abastece (direito enfia 1), arrastar a pilha divide igual entre os slots, dois cliques juntam todo o item na mão e Shift + dois cliques mandam todo o item para o baú e de volta. Novo teste `14-inventario-esperto.js`, com um DOM de mentira que responde a clique e a arrasto. |
 | 02/09/2026 | **v0.8.4** — **A roda do mouse virou só zoom** (sem `Ctrl`), e a barra rápida passou a ser escolhida só por número ou clique. **Contador de fps** no canto de cima à esquerda, com o zoom do lado. **O travamento no zoom aberto acabou** (§8.3): o chão agora é desenhado por chunk de um canvas guardado — 43 desenhos por quadro no zoom 1, contra ~2000 antes; junto, `World.idx()` passou a lembrar do último chunk e o render varre a lista de entidades em vez de perguntar tile a tile. A **fabricação passou a mostrar uma seção por vez**, com botões de Ferramentas / Estruturas / Itens. Novo teste `13-desempenho-e-secoes.js`, que conta os desenhos de um quadro com um canvas de mentira. **Combinado para depois: zoom no mapa do `M`.** |

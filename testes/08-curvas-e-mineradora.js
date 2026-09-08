@@ -16,8 +16,9 @@ console.log('=== MINERADORA: joga na faixa DO LADO DELA (a que fica na frente da
 // outra so funciona por sorte.
 function acharCarvao(){
   for(let y=-60;y<60;y++) for(let x=-60;x<60;x++){
+    // a mineradora 2x2 virada para leste cospe no canto de BAIXO da frente
     if(World.resAt(x,y)===D.RES.COAL && World.podeConstruir('burner_drill',x,y)
-       && World.podeConstruir('transport_belt',x+2,y)) return {x,y};
+       && World.podeConstruir('transport_belt',x+2,y+1)) return {x,y};
   }
   throw new Error('nao achei carvao com espaco para a mineradora');
 }
@@ -25,7 +26,7 @@ World.init('M1',null);
 const loc=acharCarvao();
 const dr=World.criarEntidade('burner_drill',loc.x,loc.y,1);   // saida para leste
 Inv.add(dr.inv.fuel,'coal',30);
-const beltPerp=World.criarEntidade('transport_belt',loc.x+2,loc.y,2);   // esteira indo ao SUL
+const beltPerp=World.criarEntidade('transport_belt',loc.x+2,loc.y+1,2);   // esteira indo ao SUL
 rodar(40);
 console.log('  mineradora a oeste de uma esteira que desce');
 console.log('  esquerda: '+beltPerp.faixas[0].length+' | direita: '+beltPerp.faixas[1].length);
@@ -39,7 +40,7 @@ World.init('M2',null);
 const loc2=acharCarvao();
 const dr2=World.criarEntidade('burner_drill',loc2.x,loc2.y,1);
 Inv.add(dr2.inv.fuel,'coal',30);
-const beltReta=World.criarEntidade('transport_belt',loc2.x+2,loc2.y,1);   // mesma direcao da saida
+const beltReta=World.criarEntidade('transport_belt',loc2.x+2,loc2.y+1,1);   // mesma direcao da saida
 rodar(40);
 console.log('  esquerda: '+beltReta.faixas[0].length+' | direita: '+beltReta.faixas[1].length);
 ok(beltReta.faixas[1].length===4 && beltReta.faixas[0].length===0,'esteira reta: so a faixa da DIREITA');
@@ -129,18 +130,21 @@ let l2=null;
 for(let y=-60;y<60 && !l2;y++) for(let x=-60;x<60 && !l2;x++){
   if(World.resAt(x,y)===D.RES.IRON && World.podeConstruir('burner_drill',x,y)){
     let livre=true;
-    for(let k=2;k<=9;k++) if(!World.podeConstruir('transport_belt',x+k,y)) livre=false;
+    for(let k=2;k<=9;k++) if(!World.podeConstruir('transport_belt',x+k,y+1)) livre=false;
+    if(!World.podeConstruir('stone_furnace',x+5,y+1)) livre=false;
     if(livre) l2={x,y};
   }
 }
+// a linha corre na altura da SAÍDA da mineradora, que é o canto de baixo
+const ly=l2.y+1;
 const d3=World.criarEntidade('burner_drill',l2.x,l2.y,1); Inv.add(d3.inv.fuel,'coal',20);
-World.criarEntidade('transport_belt',l2.x+2,l2.y,1);
-World.criarEntidade('transport_belt',l2.x+3,l2.y,1);
-const i4=World.criarEntidade('inserter',l2.x+4,l2.y,1); Inv.add(i4.inv.fuel,'coal',20);
-const fo=World.criarEntidade('stone_furnace',l2.x+5,l2.y,0); Inv.add(fo.inv.fuel,'coal',20);
-const i5=World.criarEntidade('inserter',l2.x+7,l2.y,1); Inv.add(i5.inv.fuel,'coal',20);
-World.criarEntidade('transport_belt',l2.x+8,l2.y,1);
-const bauF=World.criarEntidade('wooden_chest',l2.x+9,l2.y,0);
+World.criarEntidade('transport_belt',l2.x+2,ly,1);
+World.criarEntidade('transport_belt',l2.x+3,ly,1);
+const i4=World.criarEntidade('inserter',l2.x+4,ly,1); Inv.add(i4.inv.fuel,'coal',20);
+const fo=World.criarEntidade('stone_furnace',l2.x+5,ly,0); Inv.add(fo.inv.fuel,'coal',20);
+const i5=World.criarEntidade('inserter',l2.x+7,ly,1); Inv.add(i5.inv.fuel,'coal',20);
+World.criarEntidade('transport_belt',l2.x+8,ly,1);
+const bauF=World.criarEntidade('wooden_chest',l2.x+9,ly,0);
 rodar(60);
 console.log('  60s de linha: '+Inv.conta(bauF.inv.geral,'iron_plate')+' placas');
 ok(Inv.conta(bauF.inv.geral,'iron_plate')>0,'a linha automatica continua funcionando');

@@ -66,7 +66,7 @@ ok(frente.x===2 && frente.y===0,'poe no tile da FRENTE (2,0)');
 rodar(10);
 const movidos=Inv.conta(destino.inv.geral,'iron_plate');
 console.log('  movidos em 10s:',movidos,'| sobrou na origem:',Inv.conta(origem.inv.geral,'iron_plate'),'| estado:',E.estado(ins));
-ok(movidos>=4 && movidos<=6,'moveu ~5 itens em 10s — moveu '+movidos);
+ok(movidos>=8 && movidos<=12,'moveu ~10 itens em 10s (1 por segundo) — moveu '+movidos);
 ok(movidos+Inv.conta(origem.inv.geral,'iron_plate')+(ins.segurando?1:0)===10,'nenhum item sumiu nem duplicou');
 
 console.log('\n=== INSERIDOR: casos de parada ===');
@@ -113,23 +113,26 @@ let loc=null;
 for(let y=-60;y<60 && !loc;y++) for(let x=-60;x<60 && !loc;x++){
   if(World.resAt(x,y)===D.RES.IRON && World.podeConstruir('burner_drill',x,y)){
     let livre=true;
-    for(let k=2;k<=9;k++) if(!World.podeConstruir('transport_belt',x+k,y)) livre=false;
+    for(let k=2;k<=9;k++) if(!World.podeConstruir('transport_belt',x+k,y+1)) livre=false;
+    if(!World.podeConstruir('stone_furnace',x+5,y+1)) livre=false;
     if(livre) loc={x,y};
   }
 }
 console.log('  montando a linha em',loc);
+// a linha corre na altura da SAÍDA da mineradora: o canto de baixo da frente
+const ly=loc.y+1;
 const dr=World.criarEntidade('burner_drill',loc.x,loc.y,1);
 Inv.add(dr.inv.fuel,'coal',20);
-const be1=World.criarEntidade('transport_belt',loc.x+2,loc.y,1);
-World.criarEntidade('transport_belt',loc.x+3,loc.y,1);
-const ins2=World.criarEntidade('inserter',loc.x+4,loc.y,1);
+const be1=World.criarEntidade('transport_belt',loc.x+2,ly,1);
+World.criarEntidade('transport_belt',loc.x+3,ly,1);
+const ins2=World.criarEntidade('inserter',loc.x+4,ly,1);
 Inv.add(ins2.inv.fuel,'coal',20);
-const fo=World.criarEntidade('stone_furnace',loc.x+5,loc.y,0);
+const fo=World.criarEntidade('stone_furnace',loc.x+5,ly,0);
 Inv.add(fo.inv.fuel,'coal',20);
-const ins3=World.criarEntidade('inserter',loc.x+7,loc.y,1);
+const ins3=World.criarEntidade('inserter',loc.x+7,ly,1);
 Inv.add(ins3.inv.fuel,'coal',20);
-const be3=World.criarEntidade('transport_belt',loc.x+8,loc.y,1);
-const bauF=World.criarEntidade('wooden_chest',loc.x+9,loc.y,0);
+const be3=World.criarEntidade('transport_belt',loc.x+8,ly,1);
+const bauF=World.criarEntidade('wooden_chest',loc.x+9,ly,0);
 
 rodar(60);
 const placas=Inv.conta(bauF.inv.geral,'iron_plate');

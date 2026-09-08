@@ -42,14 +42,22 @@ function lugarLivre(tipo,perto){
 
 console.log('\n=== O PERSONAGEM E AS ESTRUTURAS ===');
 World.init('CLARITA1',null);
-const base=lugarLivre('transport_belt');
+// precisa de corredor livre em cima e embaixo, senão quem barra é uma árvore
+let base=null;
+for(let r=0;r<40 && !base;r++) for(let dy=-r;dy<=r && !base;dy++) for(let dx=-r;dx<=r && !base;dx++){
+  if(Math.max(Math.abs(dx),Math.abs(dy))!==r) continue;
+  let bom=true;
+  for(let k=-2;k<=2;k++) if(!World.podeConstruir('transport_belt',dx,dy+k) || World.resAt(dx,dy+k)) bom=false;
+  if(bom) base={x:dx,y:dy};
+}
 const p=PlayerLib.criar(base.x+0.5, base.y+1.5);   // logo abaixo do tile da esteira
 World.criarEntidade('transport_belt',base.x,base.y,1);
 
 const antesY=p.y;
-for(let i=0;i<40;i++) PlayerLib.mover(p,0,-1,1/60);   // anda para cima, contra a esteira
-console.log('  tentou atravessar a esteira: andou de y='+antesY.toFixed(2)+' para y='+p.y.toFixed(2));
-ok(p.y > base.y+0.9,'a esteira barra o personagem (ele não atravessa)');
+for(let i=0;i<40;i++) PlayerLib.mover(p,0,-1,1/60);   // anda para cima, por cima da esteira
+console.log('  andou de y='+antesY.toFixed(2)+' para y='+p.y.toFixed(2)+' (a esteira estava em y='+base.y+')');
+ok(p.y < base.y+0.5,'dá para atravessar a esteira andando por cima dela');
+ok(!World.tileSolido(base.x,base.y),'a esteira não conta como parede');
 
 // construir em cima de si mesmo
 const emCima = { x: Math.floor(p.x), y: Math.floor(p.y) };
@@ -69,10 +77,10 @@ if(World.podeConstruir('transport_belt',doLado.x,doLado.y)){
 
 console.log('\n=== SE FICOU PRESO, ELE SAI ===');
 World.init('CLARITA2',null);
-const lug=lugarLivre('transport_belt');
+const lug=lugarLivre('stone_furnace');
 const p2=PlayerLib.criar(lug.x+0.5,lug.y+0.5);
-World.criarEntidade('transport_belt',lug.x,lug.y,1);   // nasceu em cima dele
-ok(PlayerLib.colide(p2.x,p2.y),'ele começou preso dentro da esteira');
+World.criarEntidade('stone_furnace',lug.x,lug.y,0);   // nasceu em cima dele
+ok(PlayerLib.colide(p2.x,p2.y),'ele começou preso dentro da fornalha');
 PlayerLib.update(p2,1/60);
 console.log('  saiu para ('+p2.x.toFixed(1)+', '+p2.y.toFixed(1)+')');
 ok(!PlayerLib.colide(p2.x,p2.y),'no quadro seguinte ele já está fora');
@@ -138,6 +146,28 @@ alimentar(est2, ['coal','coal'], 5);     // só carvão passando
 console.log('  estado do inseridor: '+E.estado(ins3));
 ok(E.contarCombustivel(fornoCheio)===50,'ele não empilhou mais carvão na fornalha cheia');
 ok(E.estado(ins3).indexOf('sirva')>=0 || !ins3.ativo,'e o painel explica que não há o que servir');
+
+console.log('\n=== A MINERADORA CUSPE SEMPRE DO MESMO LADO ===');
+World.init('CLARITA6',null);
+const ld=lugarLivre('burner_drill');
+const nomes=['norte','leste','sul','oeste'];
+const esperado=[
+  {x:ld.x+1, y:ld.y-1},   // aponta norte  → direita é leste
+  {x:ld.x+2, y:ld.y+1},   // aponta leste  → direita é sul
+  {x:ld.x,   y:ld.y+2},   // aponta sul    → direita é oeste
+  {x:ld.x-1, y:ld.y}      // aponta oeste  → direita é norte
+];
+let ladoCerto=true;
+for(let d=0;d<4;d++){
+  const m=World.criarEntidade('burner_drill',ld.x,ld.y,d);
+  const s=E.tileSaida(m);
+  const bate = s.x===esperado[d].x && s.y===esperado[d].y;
+  console.log('  virada para '+nomes[d].padEnd(6)+' cospe em ('+s.x+','+s.y+')'+
+    (bate?'':'  ✘ esperado ('+esperado[d].x+','+esperado[d].y+')'));
+  if(!bate) ladoCerto=false;
+  World.removerEntidade(m);
+}
+ok(ladoCerto,'nas quatro direções a saída fica no lado direito da frente');
 
 console.log('\n=== CONSTRUIR COM A PILHA PRESA NO CURSOR ===');
 const fonteGame=fs.readFileSync(path.join(RAIZ,'src/js/game/game.js'),'utf8');

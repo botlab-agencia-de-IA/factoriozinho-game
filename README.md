@@ -49,7 +49,7 @@ servidor local com o Node e abre o jogo em `http://localhost:8080`).
 |---|---|
 | **`GDD.md`** | **O documento de design — a fonte da verdade do projeto.** Tudo que foi decidido, cortado e o que falta fazer está aqui. |
 | **`CORES.md`** | A paleta de cores do jogo, preenchida à mão. As cores daqui vão para o `paleta.js`. |
-| **`MATEMATICA.md`** | Os números do jogo: o que cada máquina produz, come e queima, e a proposta de balanceamento esperando decisão. |
+| **`MATEMATICA.md`** | Os números do jogo: o que cada máquina produz, come e queima, e a conta de quanto carvão a sua fábrica precisa. |
 | **`assets/LEIA-ME.md`** | Como desenhar a arte: tamanho de cada grade, nome de cada arquivo. |
 | `index.html` | O jogo. Abre com duplo clique. |
 | `assets/` | As artes em PNG. O que não existir aqui é desenhado por código. |

@@ -102,12 +102,14 @@ console.log('  queima          ' + carvaoIns + ' carvão/min   (1 carvão dura '
 World.init('MAT5',null);
 const jz2=achar(D.RES.IRON);
 const d2=World.criarEntidade('burner_drill',jz2.x,jz2.y,1);
-const e1=World.criarEntidade('transport_belt',jz2.x+2,jz2.y,1);
-const e2=World.criarEntidade('transport_belt',jz2.x+3,jz2.y,1);
-const i1=World.criarEntidade('inserter',jz2.x+4,jz2.y,1);
-const fo=World.criarEntidade('stone_furnace',jz2.x+5,jz2.y,1);
-const i2=World.criarEntidade('inserter',jz2.x+7,jz2.y,1);
-const bf=World.criarEntidade('wooden_chest',jz2.x+8,jz2.y,0);
+// a linha corre na altura da saída da mineradora (canto de baixo da frente)
+const ly=jz2.y+1;
+const e1=World.criarEntidade('transport_belt',jz2.x+2,ly,1);
+const e2=World.criarEntidade('transport_belt',jz2.x+3,ly,1);
+const i1=World.criarEntidade('inserter',jz2.x+4,ly,1);
+const fo=World.criarEntidade('stone_furnace',jz2.x+5,ly,1);
+const i2=World.criarEntidade('inserter',jz2.x+7,ly,1);
+const bf=World.criarEntidade('wooden_chest',jz2.x+8,ly,0);
 Inv.add(d2.inv.fuel,'coal',200);
 Inv.add(fo.inv.fuel,'coal',200);
 Inv.add(i1.inv.fuel,'coal',50);
@@ -136,13 +138,17 @@ const perto=(v,alvo,folga)=>Math.abs(v-alvo)<=folga;
 
 console.log('============= OS NUMEROS CONTINUAM OS COMBINADOS =============');
 console.log('');
-ok(perto(minerado,26,4),'mineradora tira ~26 minerios/min (deu '+minerado+')');
-ok(perto(placas,18,3),'fornalha faz ~18 placas/min (deu '+placas+')');
-ok(perto(movidos,30,5),'inseridor move ~30 itens/min (deu '+movidos+')');
+ok(perto(minerado,30,2),'mineradora tira ~30 minerios/min (deu '+minerado+')');
+ok(perto(placas,20,2),'fornalha faz ~20 placas/min (deu '+placas+')');
+ok(perto(movidos,60,4),'inseridor move ~60 itens/min (deu '+movidos+')');
 ok(passou>600,'esteira leva mais de 600 itens/min (deu '+passou+')');
-ok(perto(carvaoForno,8,2),'fornalha queima ~8 carvoes/min (deu '+carvaoForno+')');
-ok(perto(carvaoDrill,8,2),'mineradora queima ~8 carvoes/min (deu '+carvaoDrill+')');
-ok(linha/2>12,'a linha inteira entrega mais de 12 placas/min (deu '+(linha/2).toFixed(1)+')');
+ok(perto(carvaoForno,2,1),'fornalha queima ~2 carvoes/min (deu '+carvaoForno+')');
+ok(perto(carvaoDrill,2,1),'mineradora queima ~2 carvoes/min (deu '+carvaoDrill+')');
+ok(perto(minerado/minerioGasto,1.5,0.15),'1 mineradora a carvao alimenta ~1,5 fornalhas (deu '+
+   (minerado/minerioGasto).toFixed(2)+')');
+ok(perto(movidos/minerado,2,0.3),'1 inseridor da conta de ~2 mineradoras (deu '+
+   (movidos/minerado).toFixed(1)+')');
+ok(linha/2>15,'a linha inteira entrega mais de 15 placas/min (deu '+(linha/2).toFixed(1)+')');
 ok(minerado>minerioGasto,'a mineradora tira mais rapido do que a fornalha come');
 
 console.log('');

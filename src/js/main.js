@@ -5,8 +5,8 @@
 (function (global) {
   'use strict';
 
-  var VERSION = '0.8.6';
-  var PHASE = 'Fase 2 — inseridores espertos';
+  var VERSION = '0.8.7';
+  var PHASE = 'Fase 2 — a matemática fechada';
 
   function boot() {
     global.FZ.Settings.load();

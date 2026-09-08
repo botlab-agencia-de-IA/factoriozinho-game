@@ -76,9 +76,9 @@
 
   var ITEMS = {
     /* --- brutos --- */
-    wood:        { nome: 'Madeira',              stack: STACK, fuel: 4,  cor: '#c07a4a', forma: 'tora' },
+    wood:        { nome: 'Madeira',              stack: STACK, fuel: 10, cor: '#c07a4a', forma: 'tora' },
     stone:       { nome: 'Pedra',                stack: STACK, cor: '#9aa3af', forma: 'pedra' },
-    coal:        { nome: 'Carvão',               stack: STACK, fuel: 8,  cor: '#3a3f47', forma: 'pedra' },
+    coal:        { nome: 'Carvão',               stack: STACK, fuel: 30, cor: '#3a3f47', forma: 'pedra' },
     iron_ore:    { nome: 'Minério de ferro',     stack: STACK, cor: '#8d97a5', forma: 'pedra' },
     copper_ore:  { nome: 'Minério de cobre',     stack: STACK, cor: '#b3603f', forma: 'pedra' },
     gold_ore:    { nome: 'Minério de ouro',      stack: STACK, cor: '#d4a017', forma: 'pedra' },
@@ -86,7 +86,7 @@
     clay:        { nome: 'Argila',               stack: STACK, cor: '#a8674a', forma: 'pedra' },
     sand:        { nome: 'Areia',                stack: STACK, cor: '#d9c48a', forma: 'po' },
     soil:        { nome: 'Terra',                stack: STACK, cor: '#6b4f34', forma: 'po' },
-    crude_oil:   { nome: 'Petróleo bruto',       stack: STACK, fuel: 20, cor: '#25262c', forma: 'po' },
+    crude_oil:   { nome: 'Petróleo bruto',       stack: STACK, fuel: 60, cor: '#25262c', forma: 'po' },
 
     /* --- processados --- */
     iron_plate:  { nome: 'Placa de ferro',       stack: STACK, cor: '#b6bec8', forma: 'placa' },
@@ -144,11 +144,14 @@
   }
 
   /* ---------------- receitas de fundição (forno) ---------------- */
+  /* 3 s por peça = 20 por minuto. É o número em cima do qual a
+     matemática do jogo inteira foi montada (ver MATEMATICA.md).
+     O ouro demora uma vez e meia. */
   var SMELTING = {
-    iron_ore:   { saida: 'iron_plate',   qtd: 1, tempo: 3.2 },
-    copper_ore: { saida: 'copper_plate', qtd: 1, tempo: 3.2 },
+    iron_ore:   { saida: 'iron_plate',   qtd: 1, tempo: 3.0 },
+    copper_ore: { saida: 'copper_plate', qtd: 1, tempo: 3.0 },
     gold_ore:   { saida: 'gold_plate',   qtd: 1, tempo: 4.5 },
-    stone:      { saida: 'stone_brick',  qtd: 1, tempo: 3.2 },
+    stone:      { saida: 'stone_brick',  qtd: 1, tempo: 3.0 },
     sand:       { saida: 'glass',        qtd: 1, tempo: 3.0 }
   };
 
@@ -168,7 +171,7 @@
       tipo: 'drill',
       w: 2, h: 2,
       giravel: true,
-      velocidade: 0.45,          // itens por segundo
+      velocidade: 0.5,           // itens por segundo = 30/min = 1,5 fornalhas
       slots: { fuel: 1, output: 1 },
       cor: '#8a6a3a', cor2: '#6d5330',
       dica: 'Fica em cima da jazida e joga o minério no que estiver na frente.'
@@ -187,6 +190,7 @@
       tipo: 'belt',
       w: 1, h: 1,
       giravel: true,
+      atravessavel: true,        // o jogador anda por cima dela
       velocidade: 2.0,           // tiles por segundo
       capacidade: 4,             // itens que cabem em cima de 1 tile
       slots: {},
@@ -198,8 +202,11 @@
       tipo: 'inserter',
       w: 1, h: 1,
       giravel: true,
-      velocidade: 1.0,           // itens por segundo
-      gastoCombustivel: 0.16,    // queima devagar: 1 carvão dura ~50s de trabalho
+      /* ciclos por segundo: cada item gasta DOIS ciclos, um para pegar
+         e outro para entregar. 2 ciclos/s = 1 item/s = 60 por minuto,
+         o que dá conta de duas mineradoras. */
+      velocidade: 2.0,
+      gastoCombustivel: 0.25,    // 1 carvão dura 2 minutos de trabalho
       slots: { fuel: 1 },
       cor: '#c4a33a', cor2: '#957a22',
       dica: 'Pega do que está ATRÁS e põe no que está NA FRENTE (seta). Queima combustível.'

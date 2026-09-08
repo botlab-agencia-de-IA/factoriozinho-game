@@ -13,27 +13,29 @@
 
   /* ---------------- utilidades ---------------- */
 
-  /** Tile para onde a máquina cospe o produto. */
+  /* Tile para onde a máquina cospe o produto.
+     Numa máquina maior que um tile a saída fica sempre no lado DIREITO
+     da frente dela — de quem está dentro da máquina olhando para fora.
+     Antes o lado mudava conforme a direção, e a mesma mineradora girada
+     entregava ora de um lado ora do outro. Em máquina de 1 tile isso não
+     muda nada, porque frente e lado são o mesmo tile. */
   function tileSaida(e) {
-    var offX = Math.floor((e.w - 1) / 2);
-    var offY = Math.floor((e.h - 1) / 2);
     switch (e.dir) {
-      case 0: return { x: e.x + offX, y: e.y - 1 };       // norte
-      case 1: return { x: e.x + e.w,  y: e.y + offY };    // leste
-      case 2: return { x: e.x + offX, y: e.y + e.h };     // sul
-      default: return { x: e.x - 1,   y: e.y + offY };    // oeste
+      case 0: return { x: e.x + e.w - 1, y: e.y - 1 };        // norte → direita é leste
+      case 1: return { x: e.x + e.w,     y: e.y + e.h - 1 };  // leste → direita é sul
+      case 2: return { x: e.x,           y: e.y + e.h };      // sul   → direita é oeste
+      default: return { x: e.x - 1,      y: e.y };            // oeste → direita é norte
     }
   }
 
   /** Tile de onde a máquina puxa (o lado oposto ao da seta). */
+  /* De onde a máquina pega — o espelho da saída, no mesmo lado direito. */
   function tileEntrada(e) {
-    var offX = Math.floor((e.w - 1) / 2);
-    var offY = Math.floor((e.h - 1) / 2);
     switch (e.dir) {
-      case 0: return { x: e.x + offX, y: e.y + e.h };    // aponta norte → pega do sul
-      case 1: return { x: e.x - 1,    y: e.y + offY };   // aponta leste → pega do oeste
-      case 2: return { x: e.x + offX, y: e.y - 1 };      // aponta sul → pega do norte
-      default: return { x: e.x + e.w, y: e.y + offY };   // aponta oeste → pega do leste
+      case 0: return { x: e.x + e.w - 1, y: e.y + e.h };      // aponta norte → pega do sul
+      case 1: return { x: e.x - 1,       y: e.y + e.h - 1 };  // aponta leste → pega do oeste
+      case 2: return { x: e.x,           y: e.y - 1 };        // aponta sul → pega do norte
+      default: return { x: e.x + e.w,    y: e.y };            // aponta oeste → pega do leste
     }
   }
 
@@ -239,8 +241,18 @@
   function ladoDaEsteira(belt, origem) {
     var dx = DIR_DX[belt.dir], dy = DIR_DY[belt.dir];
     var rx = -dy, ry = dx;                                  // vetor "direita" da esteira
-    var ox = (origem.x + (origem.w || 1) / 2) - (belt.x + 0.5);
-    var oy = (origem.y + (origem.h || 1) / 2) - (belt.y + 0.5);
+    /* Numa máquina de mais de um tile, quem entrega é o tile de SAÍDA,
+       não o meio do prédio. Sem isso uma mineradora 2x2 parece estar
+       sempre meio de lado, mesmo entregando bem de frente. */
+    var px = origem.x + (origem.w || 1) / 2;
+    var py = origem.y + (origem.h || 1) / 2;
+    if ((origem.w > 1 || origem.h > 1) && origem.dir != null) {
+      var t = tileSaida(origem);
+      px = t.x + 0.5;
+      py = t.y + 0.5;
+    }
+    var ox = px - (belt.x + 0.5);
+    var oy = py - (belt.y + 0.5);
     var lado = ox * rx + oy * ry;
     if (Math.abs(lado) < 0.01) return 0;
     return lado > 0 ? 1 : -1;

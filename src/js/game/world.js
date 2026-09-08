@@ -474,7 +474,10 @@
       var info = D.resInfo(res);
       if (info && info.bloqueia) return true;
     }
-    return !!entityAt(x, y);
+    var e = entityAt(x, y);
+    if (!e) return false;
+    var b = D.building(e.tipo);
+    return !(b && b.atravessavel);      // a esteira deixa passar por cima
   }
 
   /* ---------------- entidades ---------------- */

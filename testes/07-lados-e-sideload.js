@@ -40,12 +40,13 @@ console.log('\n=== BUG 2: MINERADORA TAMBEM SO USA UMA FAIXA ===');
 World.init('B',null);
 let loc=null;
 for(let y=-60;y<60 && !loc;y++) for(let x=-60;x<60 && !loc;x++){
+  // a mineradora virada para leste cospe no canto de BAIXO da frente
   if(World.resAt(x,y)===D.RES.COAL && World.podeConstruir('burner_drill',x,y)
-     && World.podeConstruir('transport_belt',x+2,y)) loc={x,y};
+     && World.podeConstruir('transport_belt',x+2,y+1)) loc={x,y};
 }
 const dr=World.criarEntidade('burner_drill',loc.x,loc.y,1);
 Inv.add(dr.inv.fuel,'coal',30);
-const bd=World.criarEntidade('transport_belt',loc.x+2,loc.y,1);  // esteira sem saida
+const bd=World.criarEntidade('transport_belt',loc.x+2,loc.y+1,1);  // esteira sem saida
 rodar(60);
 console.log('  esquerda: '+bd.faixas[0].length+' | direita: '+bd.faixas[1].length);
 ok(bd.faixas[0].length===0 || bd.faixas[1].length===0,'a mineradora usou UMA faixa so');
@@ -116,18 +117,21 @@ let l2=null;
 for(let y=-60;y<60 && !l2;y++) for(let x=-60;x<60 && !l2;x++){
   if(World.resAt(x,y)===D.RES.IRON && World.podeConstruir('burner_drill',x,y)){
     let livre=true;
-    for(let k=2;k<=9;k++) if(!World.podeConstruir('transport_belt',x+k,y)) livre=false;
+    for(let k=2;k<=9;k++) if(!World.podeConstruir('transport_belt',x+k,y+1)) livre=false;
+    if(!World.podeConstruir('stone_furnace',x+5,y+1)) livre=false;
     if(livre) l2={x,y};
   }
 }
+// a linha corre na altura da SAÍDA da mineradora: o canto de baixo da frente
+const ly=l2.y+1;
 const d2=World.criarEntidade('burner_drill',l2.x,l2.y,1); Inv.add(d2.inv.fuel,'coal',20);
-World.criarEntidade('transport_belt',l2.x+2,l2.y,1);
-World.criarEntidade('transport_belt',l2.x+3,l2.y,1);
-const i4=World.criarEntidade('inserter',l2.x+4,l2.y,1); Inv.add(i4.inv.fuel,'coal',20);
-const fo=World.criarEntidade('stone_furnace',l2.x+5,l2.y,0); Inv.add(fo.inv.fuel,'coal',20);
-const i5=World.criarEntidade('inserter',l2.x+7,l2.y,1); Inv.add(i5.inv.fuel,'coal',20);
-World.criarEntidade('transport_belt',l2.x+8,l2.y,1);
-const bauF=World.criarEntidade('wooden_chest',l2.x+9,l2.y,0);
+World.criarEntidade('transport_belt',l2.x+2,ly,1);
+World.criarEntidade('transport_belt',l2.x+3,ly,1);
+const i4=World.criarEntidade('inserter',l2.x+4,ly,1); Inv.add(i4.inv.fuel,'coal',20);
+const fo=World.criarEntidade('stone_furnace',l2.x+5,ly,0); Inv.add(fo.inv.fuel,'coal',20);
+const i5=World.criarEntidade('inserter',l2.x+7,ly,1); Inv.add(i5.inv.fuel,'coal',20);
+World.criarEntidade('transport_belt',l2.x+8,ly,1);
+const bauF=World.criarEntidade('wooden_chest',l2.x+9,ly,0);
 rodar(60);
 const placas=Inv.conta(bauF.inv.geral,'iron_plate');
 console.log('  60s: '+placas+' placas');
