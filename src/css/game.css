@@ -210,25 +210,29 @@ body.jogando .screen.is-active {
   flex-shrink: 0;
   font-size: .78rem;
 }
-.mapa-legenda ul { list-style: none; }
-.mapa-legenda li {
+/* Tudo aqui e escopado na lista da legenda de proposito: o inspetor
+   mora dentro de .mapa-legenda, e uma regra solta em "span" ou em "i"
+   vazava para dentro dele — era o que esticava o icone do minerio e
+   esmagava as barrinhas de progresso. */
+.legenda-lista { list-style: none; }
+.legenda-lista li {
   display: flex;
   align-items: center;
   gap: .5rem;
   padding: .2rem 0;
   border-bottom: 1px solid var(--line-soft);
 }
-.mapa-legenda li.acabou { opacity: .4; }
-.mapa-legenda li.acabou b { color: var(--red); }
-.mapa-legenda i {
+.legenda-lista li.acabou { opacity: .4; }
+.legenda-lista li.acabou b { color: var(--red); }
+.legenda-lista i {
   width: 11px;
   height: 11px;
   border-radius: 2px;
   border: 1px solid rgba(0,0,0,.5);
   flex-shrink: 0;
 }
-.mapa-legenda span { flex: 1; color: var(--txt-dim); }
-.mapa-legenda b { color: var(--txt); font-variant-numeric: tabular-nums; font-size: .74rem; }
+.legenda-lista span { flex: 1; color: var(--txt-dim); }
+.legenda-lista b { color: var(--txt); font-variant-numeric: tabular-nums; font-size: .74rem; }
 .legenda-nota {
   margin-top: .7rem;
   font-size: .7rem;
@@ -262,7 +266,7 @@ body.jogando .screen.is-active {
 .insp-topo b { display: block; font-size: .82rem; color: var(--txt); }
 .insp-topo em { display: block; font-style: normal; font-size: .72rem; color: var(--green); }
 
-.insp-ic { display: block; width: 18px; height: 18px; flex-shrink: 0; }
+.insp-ic { display: block; width: 18px; height: 18px; flex: 0 0 auto; }
 .insp-ic.g { width: 32px; height: 32px; }
 .insp-ic canvas { display: block; width: 100%; height: 100%; image-rendering: pixelated; }
 .insp-ic.vazio {
@@ -274,7 +278,7 @@ body.jogando .screen.is-active {
   width: 24px; height: 24px;
   border-radius: 3px;
   border: 1px solid rgba(0,0,0,.5);
-  flex-shrink: 0;
+  flex: 0 0 auto;
 }
 
 .insp-coord {

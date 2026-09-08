@@ -52,7 +52,8 @@
     var restantes = total;
     function passo() {
       restantes--;
-      if (restantes === 0 && onDone) onDone();
+      // chegou arte nova: os ícones guardados são do desenho provisório
+      if (restantes === 0) { limparIcones(); if (onDone) onDone(); }
     }
 
     LISTA.forEach(function (key) {
@@ -96,15 +97,59 @@
      Usado tanto no mundo quanto nos slots da interface.
      ============================================================ */
 
+  /* ---------------- ícone pronto, guardado ----------------
+     O desenho provisório de um item são umas dez operações de traço e
+     preenchimento. Isso é barato uma vez e caríssimo 2.700 vezes por
+     quadro, que é o que uma base cheia de esteira pede: era daí que
+     vinha a queda de FPS perto da fábrica. Agora cada ícone é pintado
+     UMA vez num canvas do tamanho pedido e depois só copiado.
+     São poucos tamanhos na prática (um por nível de zoom, mais os da
+     interface), então o cache não cresce. */
+  /* Dois níveis (item → tamanho) de propósito: assim nem a chave precisa
+     ser montada com concatenação de texto a cada item desenhado. */
+  var iconeCache = {};
+  var iconeQtd = 0;
+  var ICONE_MAX = 400;
+  var pngDoItem = {};        // itemId -> Image, ou false quando não existe PNG
+
+  function iconePronto(itemId, lado) {
+    var porTamanho = iconeCache[itemId];
+    if (porTamanho) {
+      var pronto = porTamanho[lado];
+      if (pronto) return pronto;
+    } else {
+      porTamanho = iconeCache[itemId] = {};
+    }
+
+    var info = D.ITEMS[itemId];
+    if (!info) return null;
+    if (iconeQtd >= ICONE_MAX) { iconeCache = {}; iconeQtd = 0; porTamanho = iconeCache[itemId] = {}; }
+
+    var o = document.createElement('canvas');
+    o.width = lado; o.height = lado;
+    var cx = o.getContext('2d');
+    cx.imageSmoothingEnabled = false;
+    fallbackItem(cx, itemId, info, 0, 0, lado);
+
+    porTamanho[lado] = o;
+    iconeQtd++;
+    return o;
+  }
+
+  /** Some com os ícones guardados — usado quando a arte de verdade chega. */
+  function limparIcones() { iconeCache = {}; iconeQtd = 0; pngDoItem = {}; }
+
   function drawItem(ctx, itemId, x, y, size) {
-    var img = get('items/' + itemId);
+    var img = pngDoItem[itemId];
+    if (img === undefined) img = pngDoItem[itemId] = (get('items/' + itemId) || false);
     if (img) {
       ctx.drawImage(img, x, y, size, size);
       return;
     }
-    var info = D.ITEMS[itemId];
-    if (!info) return;
-    fallbackItem(ctx, itemId, info, x, y, size);
+
+    var lado = Math.max(1, Math.round(size));
+    var pronto = iconePronto(itemId, lado);
+    if (pronto) ctx.drawImage(pronto, x, y, lado, lado);
   }
 
   function fallbackItem(ctx, itemId, info, x, y, s) {
@@ -286,6 +331,7 @@
     has: has,
     status: status,
     drawItem: drawItem,
+    limparIcones: limparIcones,
     sombrear: sombrear
   };
 })(window);

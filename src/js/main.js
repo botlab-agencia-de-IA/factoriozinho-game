@@ -5,8 +5,8 @@
 (function (global) {
   'use strict';
 
-  var VERSION = '0.8.7';
-  var PHASE = 'Fase 2 — a matemática fechada';
+  var VERSION = '0.8.8';
+  var PHASE = 'Fase 2 — o desenho leve e o lado certo';
 
   function boot() {
     global.FZ.Settings.load();

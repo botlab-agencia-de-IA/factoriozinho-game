@@ -440,11 +440,22 @@
   function setRes(x, y, res, amount) {
     if (!dentroDoMundo(x, y)) return;
     idx(x, y);
+
+    /* O chão fica guardado pintado por chunk inteiro, e mandar repintar
+       custa mil e poucos desenhos. Uma mineradora tira um minério por
+       segundo: se cada um desses mandasse repintar, o chunk debaixo da
+       fábrica era refeito o tempo todo — era daí que vinha a queda de
+       FPS justamente em cima da base. Só que 415 minérios e 414 são o
+       MESMO desenho. Então só avisa quando a cara do tile muda mesmo. */
+    var resAntes = _chunk.res[_i];
+    var mudouODesenho = resAntes !== res ||
+      D.nivelDaJazida(resAntes, _chunk.amount[_i]) !== D.nivelDaJazida(res, amount);
+
     _chunk.res[_i] = res;
     _chunk.amount[_i] = amount;
     state.mods[tileKey(x, y)] = [res, amount];
     if (global.FZ.Minimap) global.FZ.Minimap.atualizarTile(x, y);
-    if (global.FZ.Render) global.FZ.Render.sujarTile(x, y);
+    if (mudouODesenho && global.FZ.Render) global.FZ.Render.sujarTile(x, y);
   }
 
   /**
@@ -546,6 +557,7 @@
     state.entities[e.id] = e;
     state.lista.push(e);
     indexar(e);
+    marcarMudanca();
     if (global.FZ.Minimap) global.FZ.Minimap.atualizarArea(x, y, b.w, b.h);
     return e;
   }
@@ -555,12 +567,20 @@
     delete state.entities[e.id];
     var i = state.lista.indexOf(e);
     if (i >= 0) state.lista.splice(i, 1);
+    marcarMudanca();
     if (global.FZ.Minimap) global.FZ.Minimap.atualizarArea(e.x, e.y, e.w, e.h);
   }
 
   function todasEntidades() {
     return state.lista;
   }
+
+  /* Sobe a cada construção, remoção ou giro. Quem guarda uma conta que
+     depende da vizinhança (a esteira e a forma dela) compara este número
+     em vez de refazer a conta a cada quadro. */
+  var versao = 1;
+  function marcarMudanca() { versao++; }
+  function versaoDoMundo() { return versao; }
 
   /* ---------------- itens no chão ---------------- */
 
@@ -617,6 +637,8 @@
     criarEntidade: criarEntidade,
     removerEntidade: removerEntidade,
     todasEntidades: todasEntidades,
+    marcarMudanca: marcarMudanca,
+    versaoDoMundo: versaoDoMundo,
     aplicarMods: aplicarMods,
     soltarItem: soltarItem,
     acharSpawn: acharSpawn,

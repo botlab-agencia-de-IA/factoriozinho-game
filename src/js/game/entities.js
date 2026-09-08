@@ -241,21 +241,25 @@
   function ladoDaEsteira(belt, origem) {
     var dx = DIR_DX[belt.dir], dy = DIR_DY[belt.dir];
     var rx = -dy, ry = dx;                                  // vetor "direita" da esteira
-    /* Numa máquina de mais de um tile, quem entrega é o tile de SAÍDA,
-       não o meio do prédio. Sem isso uma mineradora 2x2 parece estar
-       sempre meio de lado, mesmo entregando bem de frente. */
-    var px = origem.x + (origem.w || 1) / 2;
-    var py = origem.y + (origem.h || 1) / 2;
-    if ((origem.w > 1 || origem.h > 1) && origem.dir != null) {
-      var t = tileSaida(origem);
-      px = t.x + 0.5;
-      py = t.y + 0.5;
+
+    /* O lado sai da FACE de quem entrega, não da posição dela.
+       Quem entrega sempre empurra o item no sentido para onde aponta,
+       e o tile de saída dela É o tile da esteira — então comparar as
+       duas posições dava sempre zero numa máquina 2x2, e a mineradora
+       caía na faixa da direita fosse qual fosse o sentido da esteira.
+       Com o vetor da face isso some: a máquina está no lado oposto ao
+       sentido em que ela empurra. */
+    if (origem.dir != null && DIR_DX[origem.dir] !== undefined) {
+      var lado = -(DIR_DX[origem.dir] * rx + DIR_DY[origem.dir] * ry);
+      return lado === 0 ? 0 : (lado > 0 ? 1 : -1);
     }
-    var ox = px - (belt.x + 0.5);
-    var oy = py - (belt.y + 0.5);
-    var lado = ox * rx + oy * ry;
-    if (Math.abs(lado) < 0.01) return 0;
-    return lado > 0 ? 1 : -1;
+
+    // máquina sem sentido (baú, forno): resta comparar as posições
+    var ox = origem.x + (origem.w || 1) / 2 - (belt.x + 0.5);
+    var oy = origem.y + (origem.h || 1) / 2 - (belt.y + 0.5);
+    var l2 = ox * rx + oy * ry;
+    if (Math.abs(l2) < 0.01) return 0;
+    return l2 > 0 ? 1 : -1;
   }
 
   /**
@@ -384,6 +388,19 @@
    * @returns {number} 0 = reta · -1 = curva vindo da esquerda · +1 = da direita
    */
   function formaDaEsteira(e) {
+    /* A forma só muda quando alguém constrói, remove ou gira alguma coisa
+       ao lado. Recalcular isso para cada esteira em cada quadro era varrer
+       a vizinhança inteira da fábrica 60 vezes por segundo à toa. */
+    var v = World.versaoDoMundo();
+    if (e._formaVer === v) return e._formaVal;
+
+    var r = calcularFormaDaEsteira(e);
+    e._formaVer = v;
+    e._formaVal = r;
+    return r;
+  }
+
+  function calcularFormaDaEsteira(e) {
     var dx = DIR_DX[e.dir], dy = DIR_DY[e.dir];
     var rx = -dy, ry = dx;
 

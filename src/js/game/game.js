@@ -335,6 +335,7 @@
           return;
         }
         ent.dir = (ent.dir + 1) % 4;
+        World.marcarMudanca();   // a esteira do lado pode virar curva
         aviso(D.building(ent.tipo).nome + ' → ' + nomeDir(ent.dir), 'ok');
         global.FZ.Hud.atualizar();
         return;

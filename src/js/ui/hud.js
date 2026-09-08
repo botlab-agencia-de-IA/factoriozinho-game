@@ -727,6 +727,7 @@
       girar.textContent = textoGirar(e);
       girar.addEventListener('click', function () {
         e.dir = (e.dir + 1) % 4;
+        World.marcarMudanca();   // a esteira do lado pode virar curva
         girar.textContent = textoGirar(e);
       });
       corpo.appendChild(girar);
@@ -905,7 +906,7 @@
 
   function montarLegenda() {
     var totais = global.FZ.Minimap.inventarioDoMundo();
-    var html = '<h4>O que ainda existe</h4><ul>';
+    var html = '<h4>O que ainda existe</h4><ul class="legenda-lista">';
 
     for (var i = 1; i < D.RES_INFO.length; i++) {
       var ri = D.RES_INFO[i];
@@ -1107,17 +1108,31 @@
   }
 
   /** Quanto de jazida ainda existe debaixo da máquina inteira. */
-  function minerioSob(e) {
-    var total = 0;
-    for (var dy = 0; dy < e.h; dy++) {
-      for (var dx = 0; dx < e.w; dx++) {
-        var res = World.resAt(e.x + dx, e.y + dy);
+  function minerioSob(e) { return minerioNaArea(e.x, e.y, e.w, e.h).total; }
+
+  /* O que uma máquina de w x h tiraria se fosse plantada em (x, y).
+     A mineradora cobre os quatro quadrados, não um: é isso que o painel
+     tem de contar antes de você largar ela no chão.
+     @returns { total, tipos: [{item, n}] } — tipos em ordem decrescente,
+     que é a ordem em que a mineradora vai comer as jazidas. */
+  function minerioNaArea(x, y, w, h) {
+    var total = 0, mapa = {}, ordem = [];
+    for (var dy = 0; dy < h; dy++) {
+      for (var dx = 0; dx < w; dx++) {
+        var res = World.resAt(x + dx, y + dy);
         if (!res) continue;
         var info = D.resInfo(res);
-        if (info && info.emCima) total += World.amountAt(e.x + dx, e.y + dy);
+        if (!info || !info.emCima) continue;
+        var qtd = World.amountAt(x + dx, y + dy);
+        if (qtd <= 0) continue;
+        total += qtd;
+        if (mapa[info.item] === undefined) { mapa[info.item] = 0; ordem.push(info.item); }
+        mapa[info.item] += qtd;
       }
     }
-    return total;
+    var tipos = ordem.map(function (it) { return { item: it, n: mapa[it] }; });
+    tipos.sort(function (a, b) { return b.n - a.n; });
+    return { total: total, tipos: tipos };
   }
 
   function agrupar(slots) {
@@ -1198,7 +1213,11 @@
     if (!alvo && !construindo) { limparInspetorHud(); return; }
 
     var d = alvo ? lerLugar(c.tx, c.ty) : { assinatura: 'mao', html: '', prog: null, chama: null };
-    var sig = d.assinatura + '|' + (construindo || '-') + '|' + g.dirConstrucao;
+    /* Com algo na mão o painel fala do QUADRADO sob o cursor, então ele
+       tem de se refazer quando o cursor anda — mesmo por cima de chão
+       pelado, onde não há nada que mude a assinatura sozinho. */
+    var sig = d.assinatura + '|' + (construindo || '-') + '|' + g.dirConstrucao +
+      (construindo ? '|' + c.tx + ',' + c.ty : '');
 
     if (sig !== inspHudSig) {
       inspHudSig = sig;
@@ -1219,10 +1238,44 @@
   }
 
   function blocoNaMao(item) {
-    return '<div class="insp-mao">' +
+    var html = '<div class="insp-mao">' +
       '<span class="insp-ic" data-item="' + item + '"></span>' +
       '<span>Na mão: <b>' + D.itemNome(item) + '</b></span>' +
       '<em>R gira · ' + nomeDir(g.dirConstrucao) + '</em></div>';
+    return html + previaDaMineradora(item);
+  }
+
+  /* Com a mineradora na mão, o painel mostra o que os quatro quadrados
+     dela rendem juntos — e não o do quadradinho sob a ponta do mouse,
+     que era sempre um quarto da verdade. */
+  function previaDaMineradora(item) {
+    var b = D.building(D.ITEMS[item].constroi);
+    if (!b || b.tipo !== 'drill') return '';
+
+    var c = g.cursor;
+    var area = minerioNaArea(c.tx, c.ty, b.w, b.h);
+    var cabe = World.podeConstruir(D.ITEMS[item].constroi, c.tx, c.ty);
+
+    if (!area.total) {
+      return '<p class="insp-nota aviso">Sem jazida nestes ' +
+        b.w + '×' + b.h + ' quadrados — ela não tira nada aqui.</p>';
+    }
+
+    var linhas = '';
+    for (var i = 0; i < area.tipos.length; i++) {
+      linhas += linhaItem(area.tipos[i].item, D.itemNome(area.tipos[i].item),
+        formatarNumero(area.tipos[i].n));
+    }
+    if (area.tipos.length > 1)
+      linhas += linhaItem(null, 'Tudo somado', formatarNumero(area.total));
+
+    var nota = 'Nos ' + b.w + '×' + b.h + ' quadrados dela · ' +
+      tempoCurto(area.total / b.velocidade) + ' até esgotar';
+    if (!cabe) nota += '<br>Aqui não dá para construir.';
+
+    return '<p class="insp-coord">Ela vai tirar daqui</p>' +
+      '<ul class="insp-lista">' + linhas + '</ul>' +
+      '<p class="insp-nota">' + nota + '</p>';
   }
 
   function pintarIcones(box) {

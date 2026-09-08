@@ -250,6 +250,14 @@
   function terrainInfo(id) { return TERRAIN_INFO[id] || TERRAIN_INFO[2]; }
 
   global.FZ = global.FZ || {};
+  /* Uma jazida tem três desenhos: cheia, pela metade e no fim.
+     Tirar um minério de 415 para 414 não muda nada na tela — e é isso que
+     deixa o chão em paz enquanto a mineradora trabalha. */
+  function nivelDaJazida(res, qtd) {
+    if (!res) return -1;
+    return qtd > 600 ? 0 : (qtd > 200 ? 1 : 2);
+  }
+
   global.FZ.Data = {
     CONFIG: CONFIG,
     TERRAIN: TERRAIN,
@@ -268,6 +276,7 @@
     fuelValue: fuelValue,
     building: building,
     resInfo: resInfo,
-    terrainInfo: terrainInfo
+    terrainInfo: terrainInfo,
+    nivelDaJazida: nivelDaJazida
   };
 })(window);

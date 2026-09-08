@@ -4,7 +4,7 @@
 > reescrever à vontade — eu leio este arquivo antes de mexer no código. Se algo
 > aqui estiver diferente do jogo, o arquivo ganha.
 >
-> Última atualização: 02/09/2026 · Versão do doc: **0.8.7** · Jogo: **v0.8.7**
+> Última atualização: 08/09/2026 · Versão do doc: **0.8.8** · Jogo: **v0.8.8**
 >
 > 📦 Código no GitHub: **botlab-agencia-de-IA/factoriozinho-game** (privado)
 > 🧪 Para testar sem abrir o jogo: duplo clique no `testar.bat`
@@ -685,7 +685,7 @@ regiões viraram células com centro sorteado e fronteira embaralhada por ruído
 
 ## 9.5 📍 Onde paramos
 
-**02/09/2026 — v0.8.7, Fase 2 concluída + a matemática fechada.**
+**08/09/2026 — v0.8.8, Fase 2 concluída; desenho leve e o lado certo da esteira.**
 
 Funcionando: mundo finito por semente, coleta manual, inventário e fabricação,
 construção, forno, mineradora, baú, **esteiras de duas faixas com side-load e curva
@@ -740,6 +740,7 @@ cores que faltam estão no `CORES.md`.
 
 | Data | O que mudou |
 |---|---|
+| 08/09/2026 | **v0.8.8** — Correções do teste dele. **O FPS perto da base**: eram duas coisas somadas. Cada minério extraído mandava **repintar o chunk inteiro** (mil e poucos desenhos) — só que tirar um minério de 415 para 414 não muda nada na tela, então agora o chão só é repintado quando a jazida troca de desenho (medido: 45 repinturas em 10 s com 9 mineradoras viraram **zero**). E o **ícone de cada item em cima da esteira era redesenhado traço por traço, 60 vezes por segundo**; agora cada um é pintado uma vez e copiado — numa base cheia (2.700 itens na tela) o quadro caiu de **54 ms para 19 ms**. Junto: a forma da esteira (reta ou curva) deixou de ser recalculada a cada quadro, o desenho dos itens parou de criar lixo para o coletor e o canvas virou opaco. **A faixa em que a mineradora despeja** saía sempre a mesma: a conta comparava a posição da saída com a da esteira, e numa máquina 2×2 a saída **é** o tile da esteira, então dava zero sempre e caía na direita. Agora o lado sai da **face** de quem entrega — o minério cai na faixa do lado de onde veio, nas quatro direções (teste `17-lado-da-mineradora.js`). **O ícone do minério achatado no mapa**: o inspetor mora dentro de `.mapa-legenda`, e uma regra solta em `span` esticava o canvas dele (e uma em `i` esmagava as barrinhas de progresso); a legenda foi escopada na própria lista. **A prévia da mineradora** passou a somar os **quatro quadrados** que ela vai cobrir, com um item por linha e o tempo até esgotar — antes mostrava o quadradinho sob o cursor, um quarto da verdade. |
 | 02/09/2026 | **v0.8.7** — **A matemática do jogo fechada com a equação dele** (`MATEMATICA.md`): tudo por minuto, 1 mineradora a carvão = 1,5 fornalhas (a elétrica da Fase 4 = 2,5), 1 carvão = 30 s de máquina e 3 madeiras = 1 carvão. Na prática: fornalha 20 peças/min, mineradora 30 minérios/min, inseridor 60 itens/min — e o número do inseridor na configuração passou a ser o real (cada item gasta dois ciclos). **Dá para andar por cima das esteiras** (`atravessavel` em `data.js`). **A mineradora cospe sempre no lado direito da frente**, nas quatro direções — antes o lado mudava conforme a direção. Isso mexe nas linhas já montadas: a esteira que recebia a mineradora desce um tile. |
 | 02/09/2026 | **v0.8.6** — Correções do teste dele no mundo Clarita. **O inseridor ficou esperto**: olha o que a máquina da frente precisa agora e só pega isso — numa esteira com carvão e minério junto, enche a fornalha de carvão até o limite e depois passa a levar minério (§5.9). **Limite de combustível na entrega automática** (`FUEL_AUTOMATICO` = 3): máquina não empilha mais que isso em outra máquina, mas o jogador na mão enche até 100. **O inseridor a carvão se serve sozinho** do que passa atrás, senão nunca sairia do seco. **Não dá mais para construir em cima do personagem**, e quem ficou preso é empurrado para fora (era isso que dava a impressão de atravessar as esteiras — elas sempre barraram). **Dá para construir com a estrutura presa no cursor**, direto da mochila — isso tinha quebrado na v0.8.5, quando o clique com a mão cheia passou a abastecer máquina. Criado o **`MATEMATICA.md`** com os números do jogo medidos e uma proposta, e o teste `16-matematica.js` que os mede rodando a simulação. |
 | 02/09/2026 | **v0.8.5** — **O travamento no mato acabou**: as árvores eram desenhadas uma a uma (~360 por quadro numa mata fechada) e foram para dentro do desenho guardado do chunk — 16 por quadro no mesmo lugar (§8.3). Por isso a base dele rodava lisa e o mato travava: perto da base já estava desmatado. **O inventário ganhou as manhas do Factorio e do Minecraft** (§5.2): botão direito pega metade, fechar a mochila não devolve o que está na mão, clicar na máquina abastece (direito enfia 1), arrastar a pilha divide igual entre os slots, dois cliques juntam todo o item na mão e Shift + dois cliques mandam todo o item para o baú e de volta. Novo teste `14-inventario-esperto.js`, com um DOM de mentira que responde a clique e a arrasto. |

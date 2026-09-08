@@ -419,7 +419,10 @@
 
   function init(cv) {
     canvas = cv;
-    ctx = canvas.getContext('2d');
+    /* alpha:false — o jogo pinta a tela inteira todo quadro, então o
+       navegador não precisa guardar transparência nem compor o canvas
+       com o que está atrás dele. */
+    ctx = canvas.getContext('2d', { alpha: false });
     criarTexturas();
     resize();
     global.addEventListener('resize', resize);
@@ -665,7 +668,7 @@
         ri = D.resInfo(res);
         if (!ri || !ri.emCima) continue;
         var qtd = World.amountAt(tx, ty);
-        var nivel = qtd > 600 ? 0 : (qtd > 200 ? 1 : 2);
+        var nivel = D.nivelDaJazida(res, qtd);
         var oimg = Sprites.get(ri.sprite);
         if (oimg) cc.drawImage(oimg, px, py, TILE, TILE);
         else cc.drawImage(tex['ore' + res + '_' + nivel], px, py, TILE, TILE);
@@ -766,14 +769,22 @@
    * Onde no mundo está um item na posição `pos` (0..1) da faixa `faixa`.
    * Se a esteira faz curva, o caminho vira um arco de quarto de volta.
    */
+  /* Um ponto só, reaproveitado. Desenhar uma base cheia chama isto milhares
+     de vezes por quadro, e devolver um objeto novo em cada chamada enchia a
+     memória de lixo para o coletor limpar no meio da animação. */
+  var pontoEsteira = { x: 0, y: 0 };
+
   function posNaEsteira(e, pos, faixa, forma) {
     var dx = DIR_DX[e.dir], dy = DIR_DY[e.dir];
     var rx = -dy, ry = dx;                                  // vetor "direita"
     var off = (faixa === 1 ? DESVIO_FAIXA : -DESVIO_FAIXA);
     var cx = e.x + 0.5, cy = e.y + 0.5;
+    var p = pontoEsteira;
 
     if (!forma) {
-      return { x: cx + dx * (pos - 0.5) + rx * off, y: cy + dy * (pos - 0.5) + ry * off };
+      p.x = cx + dx * (pos - 0.5) + rx * off;
+      p.y = cy + dy * (pos - 0.5) + ry * off;
+      return p;
     }
 
     /* --- curva: o item percorre um arco de quarto de volta ---
@@ -793,7 +804,9 @@
     while (da < -Math.PI) da += Math.PI * 2;
 
     var a = a0 + da * pos;
-    return { x: qx + Math.cos(a) * raio, y: qy + Math.sin(a) * raio };
+    p.x = qx + Math.cos(a) * raio;
+    p.y = qy + Math.sin(a) * raio;
+    return p;
   }
 
   function desenharBaseEsteira(cam, e, s) {
@@ -821,14 +834,17 @@
   function desenharItensEsteira(cam, e, s) {
     Entities.garantirFaixas(e);
     var tam = s * 0.34;
+    var meia = tam / 2;
     var forma = e._forma || 0;
+    // a conta de paraTela, aberta aqui para não criar um objeto por item
+    var ox = largura / 2 - cam.x * s, oy = altura / 2 - cam.y * s;
+
     for (var f = 0; f < 2; f++) {
       var lista = e.faixas[f];
       for (var i = 0; i < lista.length; i++) {
         var it = lista[i];
         var wp = posNaEsteira(e, it.pos, f, forma);
-        var sp = paraTela(cam, wp.x, wp.y);
-        Sprites.drawItem(ctx, it.item, sp.x - tam / 2, sp.y - tam / 2, tam);
+        Sprites.drawItem(ctx, it.item, wp.x * s + ox - meia, wp.y * s + oy - meia, tam);
       }
     }
   }
