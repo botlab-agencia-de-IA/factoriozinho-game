@@ -198,6 +198,33 @@
        É o jeito do Factorio: pega metade do carvão com o botão direito na
        mochila, fecha a mochila e vai clicando nas fornalhas. */
     if (global.FZ.Hud.maoCheia()) {
+      var itemCursor = global.FZ.Hud.itemDoCursor();
+      var infoCursor = D.ITEMS[itemCursor];
+
+      /* estrutura presa no cursor: dá para construir direto da mochila,
+         sem precisar passar pela barra rápida */
+      if (infoCursor && infoCursor.constroi && !World.entityAt(tx, ty)) {
+        if (m.esq) {
+          if (!PlayerLib.noAlcance(p, tx, ty)) {
+            if (novoCliqueEsq) aviso('Longe demais', 'erro');
+          } else if (PlayerLib.pisandoNaArea(p, infoCursor.constroi, tx, ty)) {
+            if (novoCliqueEsq) aviso('Você está em cima', 'erro');
+          } else if (World.podeConstruir(infoCursor.constroi, tx, ty)) {
+            World.criarEntidade(infoCursor.constroi, tx, ty, g.dirConstrucao);
+            global.FZ.Hud.tirarDoCursor(1);
+            p.stats.construido++;
+            global.FZ.Hud.atualizar();
+          } else if (novoCliqueEsq) {
+            aviso('Não cabe aqui', 'erro');
+          }
+        } else if (novoCliqueDir) {
+          global.FZ.Hud.largarMao();
+          aviso('Voltou para a mochila', 'info');
+        }
+        PlayerLib.pararDeMinerar(p);
+        return;
+      }
+
       if (novoCliqueEsq || novoCliqueDir) {
         var maq = World.entityAt(tx, ty);
         if (!maq) {
@@ -248,7 +275,9 @@
         } else if (PlayerLib.construir(p, mao, tx, ty, g.dirConstrucao)) {
           global.FZ.Hud.atualizar();
         } else if (novoCliqueEsq) {
-          aviso(PlayerLib.noAlcance(p, tx, ty) ? 'Não cabe aqui' : 'Longe demais', 'erro');
+          if (!PlayerLib.noAlcance(p, tx, ty)) aviso('Longe demais', 'erro');
+          else if (PlayerLib.pisandoNaArea(p, infoMao.constroi, tx, ty)) aviso('Você está em cima', 'erro');
+          else aviso('Não cabe aqui', 'erro');
         }
       }
       PlayerLib.pararDeMinerar(p);

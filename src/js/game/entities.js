@@ -7,6 +7,7 @@
   'use strict';
 
   var D = global.FZ.Data;
+  var C = D.CONFIG;
   var Inv = global.FZ.Inv;
   var World = global.FZ.World;
 
@@ -41,6 +42,19 @@
    * @param origem quem está entregando (define em qual faixa da esteira cai)
    * @param faixa  quando vem de outra esteira, mantém a mesma faixa
    */
+  /** Quanto combustível a máquina já tem guardado. */
+  function contarCombustivel(e) {
+    if (!e.inv || !e.inv.fuel) return 0;
+    var n = 0;
+    for (var i = 0; i < e.inv.fuel.length; i++) if (e.inv.fuel[i]) n += e.inv.fuel[i].count;
+    return n;
+  }
+
+  /** Máquina cheia de combustível para o que vem de outra máquina. */
+  function combustivelNoLimite(alvo) {
+    return contarCombustivel(alvo) >= C.FUEL_AUTOMATICO;
+  }
+
   function aceitarItem(alvo, item, origem, faixa) {
     if (!alvo) return false;
     var b = D.building(alvo.tipo);
@@ -60,7 +74,7 @@
     }
     if (b.tipo === 'inserter') {
       // inseridor só aceita combustível (não se usa inseridor como depósito)
-      if (D.fuelValue(item) > 0 && Inv.cabe(alvo.inv.fuel, item, 1)) {
+      if (D.fuelValue(item) > 0 && !combustivelNoLimite(alvo) && Inv.cabe(alvo.inv.fuel, item, 1)) {
         return Inv.add(alvo.inv.fuel, item, 1) === 0;
       }
       return false;
@@ -74,13 +88,13 @@
         if (Inv.cabe(alvo.inv.input, item, 1)) return Inv.add(alvo.inv.input, item, 1) === 0;
         return false;
       }
-      if (D.fuelValue(item) > 0) {
+      if (D.fuelValue(item) > 0 && !combustivelNoLimite(alvo)) {
         if (Inv.cabe(alvo.inv.fuel, item, 1)) return Inv.add(alvo.inv.fuel, item, 1) === 0;
       }
       return false;
     }
     if (b.tipo === 'drill') {
-      if (D.fuelValue(item) > 0 && Inv.cabe(alvo.inv.fuel, item, 1)) {
+      if (D.fuelValue(item) > 0 && !combustivelNoLimite(alvo) && Inv.cabe(alvo.inv.fuel, item, 1)) {
         return Inv.add(alvo.inv.fuel, item, 1) === 0;
       }
       return false;
@@ -398,6 +412,86 @@
      ============================================================ */
 
   /** Tira 1 item de uma máquina (o que ela tem para dar). */
+  /**
+   * O destino aceitaria esse item AGORA? É o que faz o inseridor
+   * escolher: numa esteira com carvão e ferro, ele leva carvão só
+   * enquanto a fornalha estiver com pouco, e depois só leva minério.
+   */
+  function destinoQuer(alvo, item) {
+    if (!alvo || !item) return false;
+    var b = D.building(alvo.tipo);
+
+    if (b.tipo === 'belt') return true;
+    if (b.tipo === 'chest') return Inv.cabe(alvo.inv.geral, item, 1);
+    if (b.tipo === 'inserter') {
+      return D.fuelValue(item) > 0 && !combustivelNoLimite(alvo) &&
+             Inv.cabe(alvo.inv.fuel, item, 1);
+    }
+    if (b.tipo === 'furnace') {
+      if (D.SMELTING[item]) return Inv.cabe(alvo.inv.input, item, 1);
+      if (D.fuelValue(item) > 0) {
+        return !combustivelNoLimite(alvo) && Inv.cabe(alvo.inv.fuel, item, 1);
+      }
+      return false;
+    }
+    if (b.tipo === 'drill') {
+      return D.fuelValue(item) > 0 && !combustivelNoLimite(alvo) &&
+             Inv.cabe(alvo.inv.fuel, item, 1);
+    }
+    return false;
+  }
+
+  /** O que dá para pegar da origem agora, sem tirar do lugar. */
+  function itensAoAlcance(origem, out) {
+    out.length = 0;
+    if (!origem) return out;
+    var b = D.building(origem.tipo);
+    var i;
+
+    if (b.tipo === 'belt') {
+      // só o item da frente de cada faixa está ao alcance do braço
+      garantirFaixas(origem);
+      for (i = 0; i < 2; i++) {
+        var l = origem.faixas[i];
+        if (l.length) out.push(l[0].item);
+      }
+      return out;
+    }
+    var slots = b.tipo === 'chest' ? origem.inv.geral : origem.inv.output;
+    if (!slots) return out;
+    for (i = 0; i < slots.length; i++) if (slots[i]) out.push(slots[i].item);
+    return out;
+  }
+
+  /** Tira 1 daquele item da origem. Devolve o item ou null. */
+  function retirarItemDe(origem, item) {
+    if (!origem) return null;
+    var b = D.building(origem.tipo);
+    var i;
+
+    if (b.tipo === 'belt') {
+      garantirFaixas(origem);
+      var melhor = -1, maior = -1;
+      for (i = 0; i < 2; i++) {
+        var l = origem.faixas[i];
+        if (l.length && l[0].item === item && l[0].pos > maior) { maior = l[0].pos; melhor = i; }
+      }
+      if (melhor < 0) return null;
+      return origem.faixas[melhor].shift().item;
+    }
+
+    var slots = b.tipo === 'chest' ? origem.inv.geral : origem.inv.output;
+    if (!slots) return null;
+    for (i = 0; i < slots.length; i++) {
+      var s = slots[i];
+      if (!s || s.item !== item) continue;
+      s.count--;
+      if (s.count <= 0) slots[i] = null;
+      return item;
+    }
+    return null;
+  }
+
   function retirarDe(origem) {
     if (!origem) return null;
     var b = D.building(origem.tipo);
@@ -451,10 +545,31 @@
     return false;
   }
 
+  var _candidatos = [];        // reaproveitado, para não alocar por quadro
+
   function updateInserter(e, dt) {
     var b = D.building(e.tipo);
     var frente = tileSaida(e);
     var tras = tileEntrada(e);
+
+    /* --- no seco, ele se serve do que passa atrás ---
+       Inseridor sem combustível não trabalha, então nunca conseguiria
+       se reabastecer sozinho. Como no Factorio, ele tem esse direito:
+       se tem combustível ao alcance atrás, pega para si. */
+    if (semCombustivel(e)) {
+      var atras = World.entityAt(tras.x, tras.y);
+      if (atras) {
+        var lista = itensAoAlcance(atras, _candidatos);
+        for (var ci = 0; ci < lista.length; ci++) {
+          if (D.fuelValue(lista[ci]) <= 0) continue;
+          if (retirarItemDe(atras, lista[ci])) {
+            Inv.add(e.inv.fuel, lista[ci], 1);
+            e.seServiu = true;
+            break;
+          }
+        }
+      }
+    }
 
     /* --- já está com algo na mão: leva para a frente --- */
     if (e.segurando) {
@@ -482,12 +597,23 @@
 
     /* --- mão vazia: procura o que pegar atrás --- */
     var origem = World.entityAt(tras.x, tras.y);
-    if (!temParaDar(origem)) { e.ativo = false; e.progresso = 0; return; }
+    if (!temParaDar(origem)) { e.ativo = false; e.progresso = 0; e.naoServe = false; return; }
 
     // só pega se tiver para onde levar
     var destino = World.entityAt(frente.x, frente.y);
     if (!destino) { e.ativo = false; e.semDestino = true; return; }
     e.semDestino = false;
+
+    /* de tudo que está ao alcance atrás, o que o destino quer agora?
+       É isso que faz ele deixar o carvão passar quando a fornalha já
+       tem o bastante, e levar o minério em vez dele. */
+    var candidatos = itensAoAlcance(origem, _candidatos);
+    var escolhido = null;
+    for (var i = 0; i < candidatos.length; i++) {
+      if (destinoQuer(destino, candidatos[i])) { escolhido = candidatos[i]; break; }
+    }
+    if (!escolhido) { e.ativo = false; e.naoServe = true; e.progresso = 0; return; }
+    e.naoServe = false;
 
     if (!manterChama(e)) { e.ativo = false; return; }
 
@@ -496,9 +622,9 @@
     e.progresso += dt * b.velocidade;
 
     if (e.progresso >= 1) {
-      var pego = retirarDe(origem);
-      if (pego) { e.segurando = pego; e.progresso = 0; }
-      else e.progresso = 0;
+      var pego = retirarItemDe(origem, escolhido);
+      if (pego) e.segurando = pego;
+      e.progresso = 0;
     }
   }
 
@@ -560,6 +686,7 @@
     if (b.tipo === 'inserter') {
       if (e.semDestino) return 'Sem nada na frente para receber';
       if (semCombustivel(e)) return 'Sem combustível';
+      if (e.naoServe) return 'Nada que sirva na frente';
       if (e.ativo) return e.segurando ? 'Entregando ' + D.itemNome(e.segurando) : 'Pegando';
       if (e.segurando) return 'Destino cheio';
       return 'Nada para pegar atrás';
@@ -599,6 +726,10 @@
     retirarDe: retirarDe,
     temParaDar: temParaDar,
     conteudo: conteudo,
+    destinoQuer: destinoQuer,
+    itensAoAlcance: itensAoAlcance,
+    retirarItemDe: retirarItemDe,
+    contarCombustivel: contarCombustivel,
     estado: estado,
     jazidaSob: jazidaSob
   };

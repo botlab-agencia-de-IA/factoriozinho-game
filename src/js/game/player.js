@@ -30,6 +30,25 @@
 
   /* ---------------- movimento ---------------- */
 
+  /* Se por algum motivo o jogador ficou dentro de coisa sólida —
+     um save antigo, uma construção que nasceu em cima dele — ele é
+     empurrado para o lugar livre mais perto, em vez de ficar preso
+     ou sair atravessando parede. */
+  function desencalhar(p) {
+    if (!colide(p.x, p.y)) return false;
+    var bx = Math.floor(p.x), by = Math.floor(p.y);
+    for (var raio = 1; raio <= 8; raio++) {
+      for (var dy = -raio; dy <= raio; dy++) {
+        for (var dx = -raio; dx <= raio; dx++) {
+          if (Math.max(Math.abs(dx), Math.abs(dy)) !== raio) continue;
+          var nx = bx + dx + 0.5, ny = by + dy + 0.5;
+          if (!colide(nx, ny)) { p.x = nx; p.y = ny; return true; }
+        }
+      }
+    }
+    return false;
+  }
+
   function colide(x, y) {
     var r = C.PLAYER_HITBOX / 2;
     var x0 = Math.floor(x - r), x1 = Math.floor(x + r);
@@ -127,10 +146,20 @@
 
   /* ---------------- construção ---------------- */
 
+  /** O jogador está pisando na área onde a construção iria? */
+  function pisandoNaArea(p, tipo, tx, ty) {
+    var b = D.building(tipo);
+    if (!b) return false;
+    var r = C.PLAYER_HITBOX / 2;
+    return (p.x + r) > tx && (p.x - r) < (tx + b.w) &&
+           (p.y + r) > ty && (p.y - r) < (ty + b.h);
+  }
+
   function construir(p, itemId, tx, ty, dir) {
     var item = D.ITEMS[itemId];
     if (!item || !item.constroi) return false;
     if (!noAlcance(p, tx, ty)) return false;
+    if (pisandoNaArea(p, item.constroi, tx, ty)) return false;   // não em cima de si
     if (!World.podeConstruir(item.constroi, tx, ty)) return false;
     if (Inv.conta(p.inv, itemId) < 1) return false;
 
@@ -216,6 +245,7 @@
   /* ---------------- update geral ---------------- */
 
   function update(p, dt) {
+    desencalhar(p);
     updateFila(p, dt);
     catarDrops(p, dt);
   }
@@ -239,6 +269,8 @@
     minerarTile: minerarTile,
     pararDeMinerar: pararDeMinerar,
     construir: construir,
+    pisandoNaArea: pisandoNaArea,
+    desencalhar: desencalhar,
     remover: remover,
     fabricar: fabricar,
     podeFabricar: podeFabricar,

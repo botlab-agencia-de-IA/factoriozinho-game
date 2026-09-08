@@ -5,8 +5,8 @@
 (function (global) {
   'use strict';
 
-  var VERSION = '0.8.5';
-  var PHASE = 'Fase 2 — inventário esperto e desempenho';
+  var VERSION = '0.8.6';
+  var PHASE = 'Fase 2 — inseridores espertos';
 
   function boot() {
     global.FZ.Settings.load();

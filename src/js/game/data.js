@@ -221,6 +221,11 @@
     INV_SIZE: 40,
     HOTBAR_SIZE: 8,
     REACH: 4.2,
+    /* Quanto combustível uma máquina automática pode empilhar numa
+        outra. O jogador enche na mão o quanto quiser; inseridor e
+        mineradora só repõem até aqui, senão entopem a fornalha de
+        carvão e não sobra braço para o minério. */
+    FUEL_AUTOMATICO: 3,
     PLAYER_SPEED: 5.2,
     PLAYER_HITBOX: 0.55,
     ZOOM_MIN: 1,

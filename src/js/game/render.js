@@ -1073,12 +1073,16 @@
     var tx = cur.tx, ty = cur.ty;
     var dentro = global.FZ.Player.noAlcance(p, tx, ty);
     var mao = global.FZ.Player.itemNaMao(p);
+    // a estrutura pode estar presa no cursor, vinda da mochila
+    var noCursor = global.FZ.Hud && global.FZ.Hud.itemDoCursor ? global.FZ.Hud.itemDoCursor() : null;
+    if (noCursor && D.ITEMS[noCursor] && D.ITEMS[noCursor].constroi) mao = noCursor;
     var itemInfo = mao ? D.ITEMS[mao] : null;
 
     /* fantasma de construção */
     if (itemInfo && itemInfo.constroi) {
       var b = D.building(itemInfo.constroi);
-      var ok = dentro && World.podeConstruir(itemInfo.constroi, tx, ty);
+      var ok = dentro && World.podeConstruir(itemInfo.constroi, tx, ty) &&
+               !global.FZ.Player.pisandoNaArea(p, itemInfo.constroi, tx, ty);
       var pos = paraTela(cam, tx, ty);
       var w = b.w * s, h = b.h * s;
       var px = Math.floor(pos.x), py = Math.floor(pos.y);

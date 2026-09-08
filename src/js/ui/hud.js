@@ -1427,6 +1427,19 @@
 
   function maoCheia() { return !!mao; }
 
+  /** Que item está preso no cursor agora (ou null). */
+  function itemDoCursor() { return mao ? mao.item : null; }
+
+  /** Tira n do que está no cursor (usado ao construir com ele). */
+  function tirarDoCursor(n) {
+    if (!mao) return 0;
+    var tirou = Math.min(n, mao.count);
+    mao.count -= tirou;
+    if (mao.count <= 0) mao = null;
+    desenharMao();
+    return tirou;
+  }
+
   /**
    * Enfia o que está na mão na máquina apontada.
    * @param {number} quantos 0 = tudo que couber
@@ -1467,6 +1480,8 @@
     escape: escape,
     mouseSobreUi: mouseSobreUi,
     maoCheia: maoCheia,
+    itemDoCursor: itemDoCursor,
+    tirarDoCursor: tirarDoCursor,
     abastecer: abastecer,
     largarMao: largarMao,
     lerLugarDoMapa: lerLugar    // exposto para o teste do inspetor

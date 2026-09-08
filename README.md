@@ -33,6 +33,7 @@ servidor local com o Node e abre o jogo em `http://localhost:8080`).
 | Mapa | `M` (ou clicar no minimapa) |
 | Barra rápida | `1`–`8` ou clicar no slot |
 | Pegar metade da pilha | botão **direito** nela, dentro da mochila |
+| Construir sem a barra rápida | pegar a estrutura na mochila e clicar no chão |
 | Abastecer uma máquina | com a pilha na mão, **clicar na máquina** (direito enfia 1) |
 | Dividir entre slots | **arrastar** a pilha por eles |
 | Juntar tudo de um item | **dois cliques** no slot |
@@ -48,6 +49,7 @@ servidor local com o Node e abre o jogo em `http://localhost:8080`).
 |---|---|
 | **`GDD.md`** | **O documento de design — a fonte da verdade do projeto.** Tudo que foi decidido, cortado e o que falta fazer está aqui. |
 | **`CORES.md`** | A paleta de cores do jogo, preenchida à mão. As cores daqui vão para o `paleta.js`. |
+| **`MATEMATICA.md`** | Os números do jogo: o que cada máquina produz, come e queima, e a proposta de balanceamento esperando decisão. |
 | **`assets/LEIA-ME.md`** | Como desenhar a arte: tamanho de cada grade, nome de cada arquivo. |
 | `index.html` | O jogo. Abre com duplo clique. |
 | `assets/` | As artes em PNG. O que não existir aqui é desenhado por código. |
@@ -61,7 +63,7 @@ servidor local com o Node e abre o jogo em `http://localhost:8080`).
 
 ## 🧪 Testes
 
-Duplo clique no **`testar.bat`** (ou `node testes/rodar-tudo.js`). Ele roda 14
+Duplo clique no **`testar.bat`** (ou `node testes/rodar-tudo.js`). Ele roda 16
 conjuntos de testes que verificam o mundo, os recursos finitos, o inventário, o
 forno, a mineradora, as esteiras de duas faixas, os inseridores, as curvas, o
 desenho das regiões de minério e o inspetor do mapa — tudo sem precisar abrir o jogo.

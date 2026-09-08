@@ -4,10 +4,12 @@
 > reescrever à vontade — eu leio este arquivo antes de mexer no código. Se algo
 > aqui estiver diferente do jogo, o arquivo ganha.
 >
-> Última atualização: 02/09/2026 · Versão do doc: **0.8.5** · Jogo: **v0.8.5**
+> Última atualização: 02/09/2026 · Versão do doc: **0.8.6** · Jogo: **v0.8.6**
 >
 > 📦 Código no GitHub: **botlab-agencia-de-IA/factoriozinho-game** (privado)
 > 🧪 Para testar sem abrir o jogo: duplo clique no `testar.bat`
+>
+> 🔢 Os números do jogo (o que cada máquina produz e come) estão no `MATEMATICA.md`
 
 ---
 
@@ -147,6 +149,13 @@ COLETAR ──► FABRICAR ──► AUTOMATIZAR ──► PRODUZIR MAIS ─┘
   Escolhe-se pelo **número (1–8) ou clicando no slot** — a roda do mouse **não**
   troca de slot, ela é só do zoom.
 - Pegar/soltar pilha com o mouse (clique esquerdo pega tudo, direito pega metade).
+- **Dá para construir com a estrutura presa no cursor**, direto da mochila, sem
+  precisar passar pela barra rápida: pega a estrutura no inventário, fecha, e vai
+  clicando. O fantasma aparece igual. Botão direito devolve para a mochila.
+- **Não dá para construir em cima do próprio personagem** — o aviso diz "Você está
+  em cima". E se por algum motivo ele ficar preso dentro de coisa sólida (um save
+  antigo, por exemplo), é empurrado para o lugar livre mais perto no quadro
+  seguinte, em vez de ficar travado ou sair atravessando parede.
 
 **As manhas de inventário** (copiadas do Factorio e do Minecraft, a pedido dele):
 
@@ -304,6 +313,22 @@ onde o combustível melhor vem depois na progressão:
 internos das máquinas — o forno para de produzir quando a saída chega em 100.
 
 ### 5.9 Automação (o coração)
+
+**O inseridor pensa antes de pegar.** Ele olha o que a máquina da frente precisa
+**agora** e só pega isso. Numa esteira que leva carvão e minério junto, ele enche a
+fornalha de carvão até o limite e depois passa a levar minério, sozinho. Se nada do
+que está passando serve, ele espera de braço parado e o painel diz "Nada que sirva
+na frente".
+
+**Limite de combustível na entrega automática:** `FUEL_AUTOMATICO` = **3**
+(`data.js`). Inseridor e mineradora só repõem combustível numa máquina até esse
+tanto — senão entopem a fornalha de carvão e não sobra braço para o minério. **Na
+mão o jogador enche o quanto quiser**, até 100.
+
+**O inseridor a carvão se serve sozinho.** Sem combustível ele não trabalharia, e
+portanto nunca se reabasteceria. Como no Factorio, ele tem esse direito: se houver
+combustível ao alcance atrás dele, pega para si mesmo e volta a funcionar. É o que
+faz uma linha de carvão se auto-sustentar.
 - **Mineradora a carvão**: fica em cima da jazida, queima combustível e **cospe o
   minério na coisa que estiver na frente dela** (forno, baú ou esteira). É o primeiro
   gostinho de automação e funciona mesmo sem esteira.
@@ -583,6 +608,16 @@ nenhum na tela. Por isso todo `<script>` e `<link>` do `index.html` termina em
 
 ---
 
+## 8.45 🔢 A matemática
+
+Os números do jogo — quanto cada máquina produz, come e queima, e as proporções que
+saem disso — moram no **`MATEMATICA.md`**, com uma proposta esperando decisão do
+Vandré. Eles não são conta de papel: o teste `16-matematica.js` monta cada máquina
+num mundo de teste, roda um minuto de jogo e conta o que entrou e o que saiu. Se
+alguém mexer numa velocidade sem querer, a bateria avisa.
+
+---
+
 ## 8.5 🐛 Problemas conhecidos (a arrumar)
 
 | O quê | Situação |
@@ -624,7 +659,7 @@ regiões viraram células com centro sorteado e fronteira embaralhada por ruído
 
 ## 9.5 📍 Onde paramos
 
-**02/09/2026 — v0.8.5, Fase 2 concluída + mapa, painéis, desempenho e inventário.**
+**02/09/2026 — v0.8.6, Fase 2 concluída + correções do teste no mundo Clarita.**
 
 Funcionando: mundo finito por semente, coleta manual, inventário e fabricação,
 construção, forno, mineradora, baú, **esteiras de duas faixas com side-load e curva
@@ -645,6 +680,14 @@ O inventário ganhou as manhas do Factorio e do Minecraft (§5.2): pegar metade 
 o direito, sair com a pilha na mão e abastecer a máquina clicando nela, arrastar
 dividindo entre slots, clique duplo juntando tudo e Shift + clique duplo mandando
 todo um item para o baú.
+
+O inseridor passou a entender o que a máquina da frente precisa, existe limite de
+combustível na entrega automática, o inseridor a carvão se abastece sozinho, não dá
+mais para construir em cima do personagem e dá para construir com a estrutura presa
+no cursor (§5.2 e §5.9).
+
+**Esperando decisão dele:** a **matemática** (`MATEMATICA.md`) — os números atuais
+estão medidos e há uma proposta pronta, mas nada foi aplicado.
 
 **Falta fazer no mapa (`M`), combinado com ele:** dar zoom no mapa com a roda,
 para poder aproximar um canto e ver as estruturas daquele pedaço.
@@ -668,6 +711,7 @@ cores que faltam estão no `CORES.md`.
 
 | Data | O que mudou |
 |---|---|
+| 02/09/2026 | **v0.8.6** — Correções do teste dele no mundo Clarita. **O inseridor ficou esperto**: olha o que a máquina da frente precisa agora e só pega isso — numa esteira com carvão e minério junto, enche a fornalha de carvão até o limite e depois passa a levar minério (§5.9). **Limite de combustível na entrega automática** (`FUEL_AUTOMATICO` = 3): máquina não empilha mais que isso em outra máquina, mas o jogador na mão enche até 100. **O inseridor a carvão se serve sozinho** do que passa atrás, senão nunca sairia do seco. **Não dá mais para construir em cima do personagem**, e quem ficou preso é empurrado para fora (era isso que dava a impressão de atravessar as esteiras — elas sempre barraram). **Dá para construir com a estrutura presa no cursor**, direto da mochila — isso tinha quebrado na v0.8.5, quando o clique com a mão cheia passou a abastecer máquina. Criado o **`MATEMATICA.md`** com os números do jogo medidos e uma proposta, e o teste `16-matematica.js` que os mede rodando a simulação. |
 | 02/09/2026 | **v0.8.5** — **O travamento no mato acabou**: as árvores eram desenhadas uma a uma (~360 por quadro numa mata fechada) e foram para dentro do desenho guardado do chunk — 16 por quadro no mesmo lugar (§8.3). Por isso a base dele rodava lisa e o mato travava: perto da base já estava desmatado. **O inventário ganhou as manhas do Factorio e do Minecraft** (§5.2): botão direito pega metade, fechar a mochila não devolve o que está na mão, clicar na máquina abastece (direito enfia 1), arrastar a pilha divide igual entre os slots, dois cliques juntam todo o item na mão e Shift + dois cliques mandam todo o item para o baú e de volta. Novo teste `14-inventario-esperto.js`, com um DOM de mentira que responde a clique e a arrasto. |
 | 02/09/2026 | **v0.8.4** — **A roda do mouse virou só zoom** (sem `Ctrl`), e a barra rápida passou a ser escolhida só por número ou clique. **Contador de fps** no canto de cima à esquerda, com o zoom do lado. **O travamento no zoom aberto acabou** (§8.3): o chão agora é desenhado por chunk de um canvas guardado — 43 desenhos por quadro no zoom 1, contra ~2000 antes; junto, `World.idx()` passou a lembrar do último chunk e o render varre a lista de entidades em vez de perguntar tile a tile. A **fabricação passou a mostrar uma seção por vez**, com botões de Ferramentas / Estruturas / Itens. Novo teste `13-desempenho-e-secoes.js`, que conta os desenhos de um quadro com um canvas de mentira. **Combinado para depois: zoom no mapa do `M`.** |
 | 02/09/2026 | **v0.8.3** — Correções do teste dele. O **inspetor foi para o lugar certo**: canto direito da **tela do jogo**, embaixo do minimapa (antes eu só tinha posto na janela do mapa). A **tarja do meio do topo saiu**, e a **barra de progresso saiu de baixo das estruturas** — a progressão agora só aparece no painel. Descoberto que o navegador servia js e css **em cache** quando o jogo abre por duplo clique: todo script e css do `index.html` agora leva `?v=` (ver §8.4). Nas jazidas, entrou uma **faixa sem minério entre regiões vizinhas** (§5.3): minérios diferentes não nascem mais colados (encosto caiu de 5,4% para 0,04%) e as retas que sobravam sumiram; a cobertura caiu de ~19% para ~12% do mapa, com ~89 jazidas de 40+ tiles por mundo. A **fabricação virou três seções** — Ferramentas, Estruturas e Itens (§5.8). Novo teste `12-painel-no-jogo.js`. |
