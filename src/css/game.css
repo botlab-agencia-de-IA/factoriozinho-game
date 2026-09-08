@@ -117,6 +117,75 @@ body.jogando .screen.is-active {
 }
 #inspetor:empty { display: none; }
 
+/* ---------------- fila de fabricação, sempre na tela ----------------
+   Fica no canto de baixo à direita, com a mochila aberta ou fechada —
+   é o jeito do Factorio: você manda fabricar e continua jogando de olho
+   no que está saindo. */
+#fila-hud {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  width: 204px;
+  padding: .5rem .6rem .55rem;
+  background: rgba(20,22,26,.9);
+  border: 1px solid var(--line-soft);
+  border-radius: 6px;
+  pointer-events: auto;
+}
+#fila-hud:empty { display: none; }
+#fila-hud h4 {
+  font-size: .68rem;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: var(--txt-faint);
+  margin-bottom: .4rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+#fila-hud h4 button {
+  background: none;
+  border: none;
+  color: var(--txt-faint);
+  font-size: .66rem;
+  text-transform: none;
+  letter-spacing: 0;
+  text-decoration: underline;
+  cursor: pointer;
+}
+#fila-hud h4 button:hover { color: var(--red); }
+
+.fq-linha {
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+  padding: .12rem 0;
+}
+.fq-ic { width: 20px; height: 20px; flex: 0 0 auto; }
+.fq-ic canvas { display: block; width: 100%; height: 100%; image-rendering: pixelated; }
+.fq-nome {
+  flex: 1;
+  min-width: 0;
+  font-size: .72rem;
+  color: var(--txt-dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.fq-linha.agora .fq-nome { color: var(--txt); }
+/* o degrau que existe só para alimentar o próximo item fica apagado */
+.fq-linha.interno .fq-nome { color: var(--txt-faint); font-style: italic; }
+.fq-n { font-size: .7rem; color: var(--txt-faint); font-variant-numeric: tabular-nums; }
+.fq-barra {
+  height: 4px;
+  background: var(--bg-0);
+  border-radius: 3px;
+  overflow: hidden;
+  margin: .18rem 0 .3rem;
+}
+.fq-barra i { display: block; height: 100%; background: var(--orange); }
+.fq-mais { font-size: .68rem; color: var(--txt-faint); margin-top: .2rem; }
+
 .insp-mao {
   display: flex;
   align-items: center;
@@ -478,19 +547,84 @@ body.jogando .screen.is-active {
 }
 .janela h4 button:hover { color: var(--red); }
 
-/* inventário */
-.inv-wrap { display: flex; gap: 1.2rem; }
-.inv-lado { flex: 1; min-width: 0; }
+/* ---------------- inventário ----------------
+   Altura travada de propósito: antes a janela crescia conforme a fila e
+   a lista de receitas enchiam, e ficava pulando de tamanho no meio do
+   jogo. Agora ela tem o tamanho que tem, e o que passa disso rola por
+   dentro. */
+.janela.j-inv { height: min(620px, 86vh); }
+.janela.j-inv .corpo { overflow: hidden; display: flex; min-height: 0; }
+.inv-wrap { display: flex; gap: 1.2rem; flex: 1; min-height: 0; }
+.inv-lado { flex: 1; min-width: 0; display: flex; flex-direction: column; min-height: 0; }
 
 .grade-inv {
   display: grid;
   grid-template-columns: repeat(8, 42px);
   gap: 4px;
-  margin-bottom: .8rem;
+  align-content: start;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+/* a barra rápida, separada embaixo — o jeito do Minecraft, para ficar
+   claro que aqueles 8 são os slots que respondem às teclas 1 a 8 */
+.inv-barra {
+  margin-top: .7rem;
+  padding-top: .7rem;
+  border-top: 1px dashed var(--line);
+  flex: 0 0 auto;
+}
+.inv-barra > span {
+  display: block;
+  font-size: .66rem;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: var(--txt-faint);
+  margin-bottom: .35rem;
+}
+.inv-barra .grade-inv { overflow: visible; }
+.inv-barra .slot-item { border-color: var(--line); background: #191c22; }
+
+.inv-topo { display: flex; justify-content: space-between; align-items: center; gap: .5rem; }
+.organizar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: 0 0 auto;
+}
+.organizar > b {
+  background: var(--bg-3);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  color: var(--txt-dim);
+  font-size: .68rem;
+  font-weight: 600;
+  padding: .2rem .45rem;
+  cursor: pointer;
+  text-transform: none;
+  letter-spacing: 0;
+}
+.organizar > b:hover { border-color: var(--orange); color: var(--txt); }
+.organizar select {
+  background: var(--bg-3);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  color: var(--txt-dim);
+  font-size: .66rem;
+  padding: .2rem .25rem;
+  text-transform: none;
+  letter-spacing: 0;
 }
 
 /* receitas */
-.lista-receitas { display: flex; flex-direction: column; gap: 3px; margin-bottom: .8rem; }
+.lista-receitas {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
 
 .secoes-craft {
   display: flex;
@@ -539,24 +673,16 @@ body.jogando .screen.is-active {
 .receita i { font-style: normal; }
 .receita i.falta { color: var(--red); }
 
-/* fila */
-.fila-craft { font-size: .78rem; }
-.fila-craft .vazio { color: var(--txt-faint); font-size: .74rem; }
-.fila-item {
-  display: flex;
-  align-items: center;
-  gap: .5rem;
-  margin-bottom: 3px;
-  color: var(--txt-dim);
+/* receita que só sai fazendo os pedaços antes: dá para clicar, mas o
+   painel avisa o que vai ser feito no caminho */
+.receita.cascata { border-left: 2px solid var(--amber); }
+.receita .antes {
+  display: block;
+  font-style: normal;
+  font-size: .66rem;
+  color: var(--amber);
+  margin-top: .12rem;
 }
-.fila-item .barra {
-  flex: 1;
-  height: 5px;
-  background: var(--bg-0);
-  border-radius: 3px;
-  overflow: hidden;
-}
-.fila-item .barra div { height: 100%; background: var(--orange); transition: width .1s linear; }
 
 /* painel de máquina */
 .maq-top {

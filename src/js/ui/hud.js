@@ -39,6 +39,7 @@
     el.hotbar = document.getElementById('hotbar');
     el.avisos = document.getElementById('avisos');
     el.inspetor = document.getElementById('inspetor');
+    el.filaHud = document.getElementById('fila-hud');
     el.fps = document.getElementById('fps');
     el.janelas = document.getElementById('janelas');
     el.maoEl = document.getElementById('mao-cursor');
@@ -102,6 +103,12 @@
     d._cfg = cfg;
     d.addEventListener('mousedown', function (ev) {
       ev.preventDefault();
+
+      /* Roda do mouse em cima de qualquer slot organiza a mochila
+         inteira, na ordem escolhida ali no alto. É o único botão que
+         ainda não fazia nada aqui dentro. */
+      if (ev.button === 1) { organizarMochila(); return; }
+
       var direito = ev.button === 2;
       var s = cfg.slots[cfg.i];
       var item = mao ? mao.item : (s ? s.item : null);
@@ -533,16 +540,32 @@
     var wrap = document.createElement('div');
     wrap.className = 'inv-wrap';
 
-    // esquerda: inventário
+    /* esquerda: a mochila em cima e a BARRA RÁPIDA embaixo, separada —
+       o jeito do Minecraft. Os 8 da barra são os mesmos slots que as
+       teclas 1 a 8 pegam, e é por isso que organizar não mexe neles. */
     var esq = document.createElement('div');
     esq.className = 'inv-lado';
-    esq.innerHTML = '<h4>Inventário</h4>';
+    esq.appendChild(cabecalhoDaMochila());
+
     var grade = document.createElement('div');
     grade.className = 'grade-inv';
-    for (var i = 0; i < C.INV_SIZE; i++) {
+    for (var i = C.HOTBAR_SIZE; i < C.INV_SIZE; i++) {
       grade.appendChild(criarSlot({ slots: g.player.inv, i: i, contexto: 'inv' }));
     }
     esq.appendChild(grade);
+
+    var barra = document.createElement('div');
+    barra.className = 'inv-barra';
+    barra.innerHTML = '<span>Barra rápida — teclas 1 a ' + C.HOTBAR_SIZE + '</span>';
+    var gradeBarra = document.createElement('div');
+    gradeBarra.className = 'grade-inv';
+    for (var h = 0; h < C.HOTBAR_SIZE; h++) {
+      gradeBarra.appendChild(criarSlot({
+        slots: g.player.inv, i: h, contexto: 'inv', hotbar: h + 1
+      }));
+    }
+    barra.appendChild(gradeBarra);
+    esq.appendChild(barra);
 
     // direita: fabricação
     var dir = document.createElement('div');
@@ -555,17 +578,65 @@
     lista.id = 'lista-receitas';
     dir.appendChild(lista);
 
-    var fila = document.createElement('div');
-    fila.className = 'fila-craft';
-    fila.id = 'fila-craft';
-    dir.appendChild(fila);
-
     wrap.appendChild(esq);
     wrap.appendChild(dir);
     corpo.appendChild(wrap);
 
     montarReceitas();
     atualizar();
+  }
+
+  /* Título da mochila com o botão de organizar e a escolha da ordem.
+     A ordem fica guardada nas configurações: é ela que a roda do mouse
+     usa quando ele organiza sem abrir isto aqui. */
+  function cabecalhoDaMochila() {
+    var h = document.createElement('h4');
+    h.className = 'inv-topo';
+    h.innerHTML = '<span>Inventário</span>' +
+      '<span class="organizar">' +
+        '<b id="btn-organizar" title="Ou aperte a roda do mouse em cima de qualquer slot">Organizar</b>' +
+        '<select id="ordem-inv">' +
+          '<option value="nome">por nome</option>' +
+          '<option value="quantidade">por quantidade</option>' +
+        '</select>' +
+      '</span>';
+
+    var sel = h.querySelector('#ordem-inv');
+    sel.value = ordemDoInventario();
+    sel.addEventListener('change', function () {
+      guardarOrdem(sel.value);
+    });
+    h.querySelector('#btn-organizar').addEventListener('click', function () {
+      organizarMochila();
+    });
+    return h;
+  }
+
+  /* Lida na hora, e não no topo do arquivo: assim o hud continua
+     carregando num teste que não trouxe as configurações junto. */
+  function ordemDoInventario() {
+    var S = global.FZ.Settings;
+    var v = S ? S.get('ordemInventario') : 'nome';
+    return (v === 'quantidade') ? 'quantidade' : 'nome';
+  }
+
+  function guardarOrdem(v) {
+    if (global.FZ.Settings) global.FZ.Settings.set('ordemInventario', v);
+  }
+
+  /* Organiza da barra rápida para a frente — nunca a barra em si.
+     Ele pediu assim: a picareta que está no 1 tem de continuar no 1. */
+  function organizarMochila() {
+    var mudou = Inv.organizar(g.player.inv, ordemDoInventario(),
+      C.HOTBAR_SIZE, g.player.inv.length);
+    if (mudou) {
+      flash('Mochila organizada ' +
+        (ordemDoInventario() === 'nome' ? 'por nome' : 'por quantidade'));
+    } else {
+      flash('Já estava organizada');
+    }
+    atualizar();
+    atualizarHotbar();
   }
 
   function montarReceitas() {
@@ -586,8 +657,15 @@
 
     function montarUmaReceita(r) {
       var pode = PlayerLib.podeFabricar(g.player, r);
+      /* Não dá direto, mas dá fazendo os pedaços antes? É o jeito do
+         Factorio: clicou na mineradora, o jogo faz a engrenagem e o
+         forno sozinho. */
+      var passos = pode ? null : PlayerLib.passosAntesDe(g.player, r);
+      var emCascata = !pode && !!passos;
+
       var linha = document.createElement('button');
-      linha.className = 'receita' + (pode ? '' : ' bloqueada');
+      linha.className = 'receita' + (pode || emCascata ? '' : ' bloqueada') +
+        (emCascata ? ' cascata' : '');
 
       var cv = document.createElement('canvas');
       cv.width = 32; cv.height = 32;
@@ -605,14 +683,34 @@
         custos.push('<i class="' + (falta ? 'falta' : '') + '">' +
           D.itemNome(item) + ' ' + tem + '/' + r.custo[item] + '</i>');
       }
+      var extra = '';
+      if (emCascata) {
+        extra = '<em class="antes">faz antes: ' + passos.map(function (x) {
+          return D.itemNome(x.item) + (x.n > 1 ? ' ×' + x.n : '');
+        }).join(', ') + '</em>';
+      }
       txt.innerHTML = '<b>' + D.itemNome(r.saida) + (r.qtd > 1 ? ' ×' + r.qtd : '') + '</b>' +
-        '<small>' + custos.join(' · ') + '</small>';
+        '<small>' + custos.join(' · ') + '</small>' + extra;
       linha.appendChild(txt);
 
       linha.addEventListener('click', function (ev) {
         var vezes = ev.shiftKey ? 5 : 1;
-        if (PlayerLib.fabricar(g.player, r, vezes) === 0) {
-          flash('Faltam materiais para ' + D.itemNome(r.saida));
+        var feitos = PlayerLib.fabricar(g.player, r, vezes);
+        if (feitos === 0) {
+          // com shift ele pediu 5: talvez dê para fazer menos que isso
+          if (vezes > 1) {
+            for (var n = vezes - 1; n > 0 && feitos === 0; n--) {
+              feitos = PlayerLib.fabricar(g.player, r, n);
+            }
+          }
+          if (feitos === 0) {
+            flash('Faltam materiais para ' + D.itemNome(r.saida));
+          }
+        }
+        if (feitos > 0 && emCascata) {
+          flash('Fazendo os pedaços antes: ' + passos.map(function (x) {
+            return D.itemNome(x.item);
+          }).join(', '));
         }
         atualizar();
       });
@@ -651,27 +749,78 @@
     }
   }
 
+  /* ---------------- fila de fabricação ----------------
+     Mora no canto de baixo à direita da TELA, não dentro da mochila:
+     ele manda fabricar, fecha a mochila e continua vendo o que está
+     saindo. Só a barra do primeiro anda; os outros são a espera.
+
+     Ela se remonta só quando a lista muda de verdade — a barra do de
+     cima anda sozinha, sem refazer o HTML 60 vezes por segundo. */
+  var filaSig = null;
+
   function atualizarFila() {
-    var box = document.getElementById('fila-craft');
+    var box = el.filaHud;
     if (!box) return;
     var fila = g.player.fila;
-    if (!fila.length) { box.innerHTML = '<p class="vazio">Nada sendo fabricado.</p>'; return; }
 
-    var html = '<h4>Fila <button id="cancelar-craft">cancelar último</button></h4>';
-    for (var i = 0; i < Math.min(fila.length, 8); i++) {
-      var f = fila[i];
-      var pct = i === 0 ? Math.round(f.progresso * 100) : 0;
-      html += '<div class="fila-item"><span>' + D.itemNome(f.receita.saida) + '</span>' +
-        '<div class="barra"><div style="width:' + pct + '%"></div></div></div>';
+    if (!fila.length) {
+      if (filaSig !== 'vazia') { filaSig = 'vazia'; box.innerHTML = ''; }
+      return;
     }
-    if (fila.length > 8) html += '<p class="vazio">+' + (fila.length - 8) + ' na fila</p>';
-    box.innerHTML = html;
 
-    var btn = document.getElementById('cancelar-craft');
-    if (btn) btn.addEventListener('click', function () {
-      PlayerLib.cancelarFabricacao(g.player);
-      atualizar();
-    });
+    var MOSTRA = 6;
+    var sig = fila.length + '|';
+    for (var s2 = 0; s2 < Math.min(fila.length, MOSTRA); s2++) {
+      sig += fila[s2].receita.saida + (fila[s2].entrega > 0 ? '' : '.') + ',';
+    }
+
+    if (sig !== filaSig) {
+      filaSig = sig;
+      var html = '<h4><span>Fabricando</span>' +
+        '<button id="cancelar-craft" title="Cancela o último pedido inteiro">cancelar</button></h4>';
+
+      for (var i = 0; i < Math.min(fila.length, MOSTRA); i++) {
+        var f = fila[i];
+        var interno = !(f.entrega === undefined || f.entrega > 0);
+        var qtd = (f.entrega === undefined) ? f.receita.qtd : f.receita.qtd;
+        html += '<div class="fq-linha' + (i === 0 ? ' agora' : '') +
+          (interno ? ' interno' : '') + '">' +
+          '<span class="fq-ic" data-item="' + f.receita.saida + '"></span>' +
+          '<span class="fq-nome">' + D.itemNome(f.receita.saida) +
+            (interno ? ' <em>(peça)</em>' : '') + '</span>' +
+          (qtd > 1 ? '<span class="fq-n">×' + qtd + '</span>' : '') +
+          '</div>';
+        if (i === 0) html += '<div class="fq-barra"><i></i></div>';
+      }
+      if (fila.length > MOSTRA) {
+        html += '<p class="fq-mais">+' + (fila.length - MOSTRA) + ' esperando</p>';
+      }
+      box.innerHTML = html;
+      pintarIconesFila(box);
+
+      var btn = document.getElementById('cancelar-craft');
+      if (btn) btn.addEventListener('click', function () {
+        PlayerLib.cancelarFabricacao(g.player);
+        filaSig = null;
+        atualizarFila();
+        if (temJanela()) atualizar();
+      });
+    }
+
+    var barra = box.querySelector('.fq-barra > i');
+    if (barra) barra.style.width = Math.round(Math.min(1, fila[0].progresso) * 100) + '%';
+  }
+
+  function pintarIconesFila(box) {
+    var ics = box.querySelectorAll('.fq-ic[data-item]');
+    for (var i = 0; i < ics.length; i++) {
+      var cv = document.createElement('canvas');
+      cv.width = 20; cv.height = 20;
+      var cx = cv.getContext('2d');
+      cx.imageSmoothingEnabled = false;
+      Sprites.drawItem(cx, ics[i].dataset.item, 0, 0, 20);
+      ics[i].appendChild(cv);
+    }
   }
 
   /* ---------------- painel de máquina ---------------- */
@@ -1439,6 +1588,11 @@
     }
 
     if (mapaCanvas) desenharMapaGrande();
+
+    /* A fila fica fora do compasso de 0,12 s: a barra do que está sendo
+       feito tem de andar lisa. Remontar o HTML dela só acontece quando a
+       lista muda; o resto do tempo é só a largura de uma barrinha. */
+    atualizarFila();
 
     // avisos
     var html = '';

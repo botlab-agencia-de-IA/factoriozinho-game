@@ -5,8 +5,8 @@
 (function (global) {
   'use strict';
 
-  var VERSION = '0.8.8';
-  var PHASE = 'Fase 2 — o desenho leve e o lado certo';
+  var VERSION = '0.8.9';
+  var PHASE = 'Fase 2 — mochila arrumada e fabricação em escada';
 
   function boot() {
     global.FZ.Settings.load();

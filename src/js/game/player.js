@@ -188,27 +188,154 @@
 
   /* ---------------- fabricação na mão ---------------- */
 
+  /** Dá para pagar a receita agora, sem fabricar mais nada antes? */
   function podeFabricar(p, receita) {
     return Inv.temTodos(p.inv, receita.custo);
   }
 
-  function fabricar(p, receita, vezes) {
-    vezes = vezes || 1;
-    var feitos = 0;
-    for (var i = 0; i < vezes; i++) {
-      if (!Inv.consumir(p.inv, receita.custo)) break;
-      p.fila.push({ receita: receita, progresso: 0 });
-      feitos++;
+  /** A receita de mão que produz este item, se existir. */
+  function receitaDe(item) {
+    for (var i = 0; i < D.HAND_RECIPES.length; i++) {
+      if (D.HAND_RECIPES[i].saida === item) return D.HAND_RECIPES[i];
     }
-    return feitos;
+    return null;
   }
 
-  /** Cancela o último item da fila e devolve os materiais. */
+  var LIMITE_FILA = 120;        // teto de segurança para uma cascata só
+
+  /* ---------------- fabricação em cascata ----------------
+     Como no Factorio: clicou na mineradora e só tem chapa e pedra na
+     mochila? O jogo monta a escada sozinho — faz as engrenagens, faz o
+     forno e só então a mineradora.
+
+     O que o planejamento devolve é a lista de trabalhos já na ORDEM de
+     execução (quem depende de outro vem depois), e para cada um:
+
+       pago    o que sai da mochila por causa DELE (o resto vem da fila)
+       entrega quanto do resultado vai para a mochila quando ele terminar
+
+     `entrega` é o que faz a escada funcionar: a engrenagem feita para
+     alimentar a mineradora entrega ZERO — ela não passa pela mochila, é
+     consumida ali mesmo. Só a sobra de um arredondamento é entregue. */
+  function planejar(p, receita, vezes) {
+    var disp = {};
+    for (var i = 0; i < p.inv.length; i++) {
+      var s = p.inv[i];
+      if (s) disp[s.item] = (disp[s.item] || 0) + s.count;
+    }
+
+    var jobs = [];
+    var naPilha = {};           // pega receita que depende de si mesma
+
+    /** Uma rodada da receita. Devolve o índice do trabalho, ou -1. */
+    function umaRodada(r) {
+      if (naPilha[r.saida]) return -1;
+      if (jobs.length >= LIMITE_FILA) return -1;
+      naPilha[r.saida] = true;
+
+      var pago = {};
+      for (var item in r.custo) {
+        var precisa = r.custo[item];
+        var tem = disp[item] || 0;
+        var usa = Math.min(tem, precisa);
+        if (usa > 0) { disp[item] = tem - usa; pago[item] = usa; }
+
+        var falta = precisa - usa;
+        if (falta <= 0) continue;
+
+        var sub = receitaDe(item);
+        if (!sub) { naPilha[r.saida] = false; return -1; }   // material bruto que acabou
+
+        var rodadas = Math.ceil(falta / sub.qtd);
+        var criados = garantir(sub, rodadas);
+        if (!criados) { naPilha[r.saida] = false; return -1; }
+
+        /* Tudo que esses trabalhos produzem é para cá, menos a sobra do
+           arredondamento — essa vai para a mochila, no último deles. */
+        var sobra = rodadas * sub.qtd - falta;
+        for (var c = criados.length - 1; c >= 0; c--) {
+          var da = Math.min(sub.qtd, sobra);
+          jobs[criados[c]].entrega = da;
+          sobra -= da;
+        }
+      }
+
+      naPilha[r.saida] = false;
+      jobs.push({ receita: r, progresso: 0, pago: pago, entrega: r.qtd });
+      return jobs.length - 1;
+    }
+
+    function garantir(r, rodadas) {
+      var criados = [];
+      for (var n = 0; n < rodadas; n++) {
+        var idx = umaRodada(r);
+        if (idx < 0) return null;
+        criados.push(idx);
+      }
+      return criados;
+    }
+
+    return garantir(receita, vezes || 1) ? jobs : null;
+  }
+
+  /** Dá para fazer, nem que seja fabricando os pedaços antes? */
+  function podeFabricarEmCascata(p, receita) {
+    return planejar(p, receita, 1) !== null;
+  }
+
+  /** Quais pedaços seriam feitos antes deste item. Só para a tela. */
+  function passosAntesDe(p, receita) {
+    var plano = planejar(p, receita, 1);
+    if (!plano) return null;
+    var out = [], soma = {}, ordem = [];
+    for (var i = 0; i < plano.length - 1; i++) {          // o último é o item pedido
+      var id = plano[i].receita.saida;
+      if (soma[id] === undefined) { soma[id] = 0; ordem.push(id); }
+      soma[id] += plano[i].receita.qtd;
+    }
+    for (var k = 0; k < ordem.length; k++) out.push({ item: ordem[k], n: soma[ordem[k]] });
+    return out;
+  }
+
+  var proximoLote = 1;
+
+  function fabricar(p, receita, vezes) {
+    var plano = planejar(p, receita, vezes || 1);
+    if (!plano) return 0;
+
+    var lote = proximoLote++;
+    for (var i = 0; i < plano.length; i++) {
+      var job = plano[i];
+      for (var item in job.pago) Inv.remove(p.inv, item, job.pago[item]);
+      job.lote = lote;
+      p.fila.push(job);
+    }
+    return vezes || 1;
+  }
+
+  /* Cancela o último pedido inteiro — a escada toda, não só o degrau de
+     cima. Cancelar só a mineradora e deixar as engrenagens rodando faria
+     elas sumirem, porque elas foram feitas para não passar pela mochila. */
   function cancelarFabricacao(p) {
-    var job = p.fila.pop();
-    if (!job) return;
-    for (var item in job.receita.custo) {
-      Inv.add(p.inv, item, job.receita.custo[item]);
+    if (!p.fila.length) return;
+    var lote = p.fila[p.fila.length - 1].lote;
+
+    for (var i = p.fila.length - 1; i >= 0; i--) {
+      var job = p.fila[i];
+      if (lote !== undefined && job.lote !== lote) continue;
+      if (lote === undefined && i !== p.fila.length - 1) continue;
+      for (var item in job.pago) Inv.add(p.inv, item, job.pago[item]);
+      p.fila.splice(i, 1);
+    }
+  }
+
+  /** Anota uma peça pronta no próximo trabalho do mesmo pedido. */
+  function creditarNoLote(p, lote, item, n) {
+    for (var i = 0; i < p.fila.length; i++) {
+      if (p.fila[i].lote !== lote) continue;
+      var pg = p.fila[i].pago;
+      pg[item] = (pg[item] || 0) + n;
+      return;
     }
   }
 
@@ -216,14 +343,26 @@
     if (!p.fila.length) return;
     var job = p.fila[0];
     job.progresso += dt / job.receita.tempo;
-    if (job.progresso >= 1) {
-      p.fila.shift();
-      var resto = Inv.add(p.inv, job.receita.saida, job.receita.qtd);
-      if (resto > 0) World.soltarItem(p.x, p.y, job.receita.saida, resto);
-      p.stats.fabricado += job.receita.qtd;
-      if (global.FZ.Game) {
-        global.FZ.Game.aviso('+' + job.receita.qtd + ' ' + D.itemNome(job.receita.saida), 'ganho');
-      }
+    if (job.progresso < 1) return;
+
+    p.fila.shift();
+    var qtd = (job.entrega === undefined) ? job.receita.qtd : job.entrega;
+
+    /* O que foi feito para alimentar o próximo degrau não passa pela
+       mochila — mas fica anotado nele. Assim, se o pedido for cancelado
+       no meio, o que já ficou pronto volta como PEÇA PRONTA em vez de
+       evaporar. Antes, cancelar depois da primeira engrenagem comia as
+       duas chapas dela. */
+    var interno = job.receita.qtd - qtd;
+    if (interno > 0) creditarNoLote(p, job.lote, job.receita.saida, interno);
+
+    if (qtd <= 0) return;
+
+    var resto = Inv.add(p.inv, job.receita.saida, qtd);
+    if (resto > 0) World.soltarItem(p.x, p.y, job.receita.saida, resto);
+    p.stats.fabricado += qtd;
+    if (global.FZ.Game) {
+      global.FZ.Game.aviso('+' + qtd + ' ' + D.itemNome(job.receita.saida), 'ganho');
     }
   }
 
@@ -274,7 +413,12 @@
     remover: remover,
     fabricar: fabricar,
     podeFabricar: podeFabricar,
+    podeFabricarEmCascata: podeFabricarEmCascata,
+    passosAntesDe: passosAntesDe,
+    planejar: planejar,
+    receitaDe: receitaDe,
     cancelarFabricacao: cancelarFabricacao,
+    updateFila: updateFila,
     itemNaMao: itemNaMao
   };
 })(window);

@@ -140,8 +140,68 @@
     return sobrou;
   }
 
+  /* ---------------- organizar ----------------
+     Junta o que está espalhado e põe em ordem. A faixa existe porque a
+     barra rápida são os 8 primeiros slots da mochila: organizar não pode
+     tirar a picareta do lugar em que ele deixou. */
+
+  var ORDENS = {
+    /* Por nome, como ele leria numa lista. */
+    nome: function (a, b) {
+      return D.itemNome(a.item).localeCompare(D.itemNome(b.item), 'pt-BR');
+    },
+    /* Do que ele tem mais para o que tem menos; empate desempata por nome,
+       senão a ordem mudava sozinha a cada vez que organizasse. */
+    quantidade: function (a, b) {
+      if (b.n !== a.n) return b.n - a.n;
+      return D.itemNome(a.item).localeCompare(D.itemNome(b.item), 'pt-BR');
+    }
+  };
+
+  /**
+   * @param ordem 'nome' ou 'quantidade'
+   * @param ini,fim faixa de slots a mexer (o resto fica intocado)
+   * @returns {boolean} true se alguma coisa mudou de lugar
+   */
+  function organizar(slots, ordem, ini, fim) {
+    ini = ini || 0;
+    fim = (fim === undefined || fim === null) ? slots.length : fim;
+    var cmp = ORDENS[ordem] || ORDENS.nome;
+    var i;
+
+    var antes = [];
+    for (i = ini; i < fim; i++) antes.push(slots[i] ? slots[i].item + ':' + slots[i].count : '-');
+
+    // 1. recolhe tudo, somando o que é do mesmo item
+    var soma = {}, lista = [];
+    for (i = ini; i < fim; i++) {
+      var s = slots[i];
+      if (!s) continue;
+      if (soma[s.item] === undefined) { soma[s.item] = 0; lista.push(s.item); }
+      soma[s.item] += s.count;
+      slots[i] = null;
+    }
+
+    // 2. põe em ordem
+    lista = lista.map(function (it) { return { item: it, n: soma[it] }; });
+    lista.sort(cmp);
+
+    // 3. devolve, enchendo pilha por pilha da esquerda para a direita
+    for (i = 0; i < lista.length; i++) {
+      addFaixa(slots, lista[i].item, lista[i].n, ini, fim);
+    }
+
+    for (i = ini; i < fim; i++) {
+      var d = slots[i] ? slots[i].item + ':' + slots[i].count : '-';
+      if (d !== antes[i - ini]) return true;
+    }
+    return false;
+  }
+
   global.FZ = global.FZ || {};
   global.FZ.Inv = {
+    organizar: organizar,
+    ORDENS: ORDENS,
     criar: criar,
     add: add,
     addFaixa: addFaixa,

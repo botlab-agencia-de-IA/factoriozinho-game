@@ -24,7 +24,8 @@
     autosave: 5,          // minutos; 0 = desligado
     tooltips: true,
     floatingNumbers: true,
-    language: 'pt-BR'
+    language: 'pt-BR',
+    ordemInventario: 'nome'      // 'nome' ou 'quantidade'
   };
 
   var current = clone(DEFAULTS);
