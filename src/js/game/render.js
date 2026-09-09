@@ -67,7 +67,9 @@
         }
         tex['b_' + tipo] = tex.belt_0;
       } else if (bt === 'inserter') {
-        tex['b_' + tipo] = texInseridorBase();
+        tex['b_' + tipo] = texInseridorBase(tipo);
+      } else if (bt === 'pole') {
+        tex['b_' + tipo] = texPoste(tipo);
       } else {
         tex['b_' + tipo] = texPredio(tipo);
       }
@@ -186,10 +188,11 @@
   }
 
   /** Base do inseridor (o braço é desenhado por cima, na hora). */
-  function texInseridorBase() {
+  function texInseridorBase(tipo) {
     var o = novoCanvas(TILE, TILE);
     var c = o.ctx;
-    var p = global.FZ.Paleta.item('inserter', '#c4a33a');
+    // o elétrico é vermelho, escolha dele, para os dois não se confundirem
+    var p = global.FZ.Paleta.item(tipo || 'inserter', '#c4a33a');
 
     c.fillStyle = 'rgba(0,0,0,0.22)';
     c.fillRect(4, TILE - 5, TILE - 8, 4);
@@ -523,8 +526,95 @@
     }
 
     repintarArvoresNaFrente(cam, p, s);
+    desenharFiosDaRede(cam, s);
     desenharBordaMundo(cam);
     desenharOverlays(g, cam, s);
+  }
+
+  /* ---------------- os fios da rede elétrica ----------------
+     Um risco de poste a poste, com uma barriga leve para parecer fio
+     pendurado. Amarelo quando há energia correndo, cinza quando a rede
+     está no escuro — dá para ver de longe qual pedaço da fábrica caiu. */
+  function desenharFiosDaRede(cam, s) {
+    if (!global.FZ.Energia) return;
+    var fios = global.FZ.Energia.fios();
+    if (!fios.length) return;
+
+    ctx.save();
+    ctx.lineWidth = Math.max(1, s * 0.05);
+    ctx.lineCap = 'round';
+
+    for (var i = 0; i < fios.length; i++) {
+      var a = fios[i][0], b = fios[i][1], rede = fios[i][2];
+      var pa = paraTela(cam, a.x + 0.5, a.y + 0.22);   // sai do alto do poste
+      var pb = paraTela(cam, b.x + 0.5, b.y + 0.22);
+
+      // fora da tela inteiro? não desenha
+      if ((pa.x < -50 && pb.x < -50) || (pa.x > largura + 50 && pb.x > largura + 50)) continue;
+      if ((pa.y < -50 && pb.y < -50) || (pa.y > altura + 50 && pb.y > altura + 50)) continue;
+
+      var viva = rede.producao > 0;
+      ctx.strokeStyle = viva ? 'rgba(255,200,87,0.75)' : 'rgba(150,157,168,0.45)';
+
+      var mx = (pa.x + pb.x) / 2, my = (pa.y + pb.y) / 2 + s * 0.18;   // a barriga
+      ctx.beginPath();
+      ctx.moveTo(pa.x, pa.y);
+      ctx.quadraticCurveTo(mx, my, pb.x, pb.y);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  /* Com o poste na mão, puxa o risco até os postes que ele alcançaria
+     dali — assim ele vê se está esticando demais ANTES de gastar o fio. */
+  function desenharFioDaPrevia(cam, tipo, tx, ty, s) {
+    var b = D.building(tipo);
+    var alcance = b.alcanceFio || 7;
+    var todas = World.todasEntidades();
+    var meu = { x: tx, y: ty, w: b.w, h: b.h };
+    var achou = false;
+
+    ctx.save();
+    ctx.lineWidth = Math.max(1, s * 0.05);
+    ctx.setLineDash([5, 4]);
+    ctx.strokeStyle = 'rgba(255,200,87,0.9)';
+
+    for (var i = 0; i < todas.length; i++) {
+      var o = todas[i];
+      var ob = D.building(o.tipo);
+      if (!ob || ob.tipo !== 'pole') continue;
+      var lim = Math.min(alcance, ob.alcanceFio || 7);
+      if (global.FZ.Energia.distanciaEntre(meu, o) > lim + 1e-6) continue;
+
+      var pa = paraTela(cam, tx + 0.5, ty + 0.22);
+      var pb = paraTela(cam, o.x + 0.5, o.y + 0.22);
+      ctx.beginPath();
+      ctx.moveTo(pa.x, pa.y);
+      ctx.lineTo(pb.x, pb.y);
+      ctx.stroke();
+      achou = true;
+    }
+    ctx.restore();
+    return achou;
+  }
+
+  /* A zona 5x5 de um poste, marcada no chão. Aparece com o poste na mão
+     (para ele saber o que vai cobrir antes de plantar) e ao passar o
+     mouse num poste já construído. */
+  function desenharZonaDoPoste(cam, tipo, tx, ty, s, corBorda, corFundo) {
+    var b = D.building(tipo);
+    var raio = ((b.zona || 5) - 1) / 2;
+    var pos = paraTela(cam, tx - raio, ty - raio);
+    var lado = (b.zona || 5) * s;
+
+    ctx.save();
+    ctx.fillStyle = corFundo;
+    ctx.fillRect(pos.x, pos.y, lado, lado);
+    ctx.strokeStyle = corBorda;
+    ctx.lineWidth = 2;
+    ctx.setLineDash([6, 4]);
+    ctx.strokeRect(pos.x + 1, pos.y + 1, lado - 2, lado - 2);
+    ctx.restore();
   }
 
   /* Pintar um chunk custa mais de mil desenhos de uma vez. Se isso cair
@@ -854,6 +944,37 @@
     desenharItensEsteira(cam, e, s);
   }
 
+  /** Poste elétrico: um mastro fino com o isolador em cima. */
+  function texPoste(tipo) {
+    var o = novoCanvas(TILE, TILE);
+    var c = o.ctx;
+    var p = global.FZ.Paleta.item(tipo, '#a97c4a');
+
+    // base larga, para não parecer que flutua
+    c.fillStyle = p.sombra;
+    c.fillRect(TILE / 2 - 6, TILE - 8, 12, 5);
+    c.fillStyle = p.base;
+    c.fillRect(TILE / 2 - 5, TILE - 9, 10, 4);
+
+    // mastro
+    c.fillStyle = p.base;
+    c.fillRect(TILE / 2 - 2, 6, 4, TILE - 14);
+    c.fillStyle = p.luz;
+    c.fillRect(TILE / 2 - 2, 6, 2, TILE - 14);
+
+    // braço de cima, onde o fio se prende
+    c.fillStyle = p.sombra;
+    c.fillRect(TILE / 2 - 8, 6, 16, 3);
+    c.fillStyle = p.brilho;
+    c.fillRect(TILE / 2 - 8, 4, 3, 3);
+    c.fillRect(TILE / 2 + 5, 4, 3, 3);
+
+    c.strokeStyle = global.FZ.Paleta.CONTORNO;
+    c.lineWidth = 1;
+    c.strokeRect(TILE / 2 - 2.5, 5.5, 5, TILE - 13);
+    return o.canvas;
+  }
+
   /* ---------------- inseridor ---------------- */
 
   function desenharInseridor(cam, e, s) {
@@ -861,8 +982,8 @@
     var px = Math.floor(pos.x), py = Math.floor(pos.y);
     var w = Math.ceil(s);
 
-    var img = Sprites.get('buildings/inserter');
-    ctx.drawImage(img || tex.b_inserter, px, py, w, w);
+    var img = Sprites.get('buildings/' + e.tipo);
+    ctx.drawImage(img || tex['b_' + e.tipo] || tex.b_inserter, px, py, w, w);
 
     var cx = pos.x + s / 2, cy = pos.y + s / 2;
 
@@ -889,7 +1010,7 @@
     var bx = cx + DIR_DX[e.dir] * alcance;
     var by = cy + DIR_DY[e.dir] * alcance;
 
-    var p = global.FZ.Paleta.item('inserter', '#c4a33a');
+    var p = global.FZ.Paleta.item(e.tipo, '#c4a33a');
     ctx.strokeStyle = global.FZ.Paleta.CONTORNO;
     ctx.lineWidth = Math.max(3, s * 0.14);
     ctx.beginPath();
@@ -918,7 +1039,11 @@
 
     // avisos
     if (!e.ativo) {
-      var msg = e.semDestino ? '⬦' : (Inv.vazio(e.inv.fuel) && e.queima <= 0 ? '🔥' : null);
+      var bi = D.building(e.tipo);
+      var semLuz = bi.eletrico && global.FZ.Energia && !global.FZ.Energia.temRede(e);
+      var msg = e.semDestino ? '⬦'
+        : semLuz ? '⚡'
+        : (!bi.eletrico && Inv.vazio(e.inv.fuel) && e.queima <= 0 ? '🔥' : null);
       if (msg) {
         ctx.globalAlpha = 0.55 + 0.45 * Math.sin(tempo * 3);
         ctx.font = Math.floor(s * 0.45) + 'px sans-serif';
@@ -979,10 +1104,11 @@
     }
 
     // aviso de problema
-    if (!e.ativo && b.tipo !== 'chest') {
+    if (!e.ativo && b.tipo !== 'chest' && b.tipo !== 'pole') {
       var msg = null;
       if (e.semJazida) msg = '⛏';
-      else if (e.queima <= 0 && Inv.vazio(e.inv.fuel)) msg = '🔥';
+      else if (b.tipo === 'generator' && global.FZ.Energia && !global.FZ.Energia.temRede(e)) msg = '⚡';
+      else if (e.inv.fuel && e.queima <= 0 && Inv.vazio(e.inv.fuel)) msg = '🔥';
       if (msg) {
         ctx.globalAlpha = 0.55 + 0.45 * Math.sin(tempo * 3);
         ctx.font = Math.floor(s * 0.5) + 'px sans-serif';
@@ -1119,6 +1245,15 @@
       ctx.lineWidth = 2;
       ctx.strokeRect(px + 1, py + 1, w - 2, h - 2);
 
+      /* Com o poste na mão ele precisa ver o que aquele lugar vai cobrir,
+         e se dali o fio ainda alcança a rede que já existe. */
+      if (b.tipo === 'pole') {
+        desenharZonaDoPoste(cam, itemInfo.constroi, tx, ty, s,
+          'rgba(255,200,87,0.8)', 'rgba(255,200,87,0.10)');
+        desenharFioDaPrevia(cam, itemInfo.constroi, tx, ty, s);
+      }
+      // a zona que o gerador precisa alcançar já aparece pelo poste
+
       if (b.giravel) {
         desenharFluxo(cam, { tipo: itemInfo.constroi, x: tx, y: ty, w: b.w, h: b.h, dir: g.dirConstrucao }, s);
       }
@@ -1128,6 +1263,12 @@
     /* destaque do tile sob o mouse */
     var res = World.resAt(tx, ty);
     var ent = World.entityAt(tx, ty);
+
+    // passar o mouse num poste mostra o que ele cobre
+    if (ent && D.building(ent.tipo).tipo === 'pole') {
+      desenharZonaDoPoste(cam, ent.tipo, ent.x, ent.y, s,
+        'rgba(255,200,87,0.7)', 'rgba(255,200,87,0.08)');
+    }
 
     if (ent) {
       var ep = paraTela(cam, ent.x, ent.y);

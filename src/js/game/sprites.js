@@ -29,6 +29,9 @@
     'items/stone_brick', 'items/iron_gear',
     'items/stone_furnace', 'items/burner_drill', 'items/wooden_chest', 'items/iron_chest',
     'items/transport_belt', 'items/inserter',
+    // a era da eletricidade
+    'items/copper_wire', 'items/electronic_circuit',
+    'items/electric_pole', 'items/burner_generator', 'items/electric_inserter',
     // ferramentas (arte do Vandré)
     'items/wood_pickaxe', 'items/stone_pickaxe', 'items/iron_pickaxe', 'items/gold_pickaxe',
     // estruturas
@@ -38,6 +41,9 @@
     'buildings/iron_chest',     // 32x32
     'buildings/transport_belt', // 32x32
     'buildings/inserter',       // 32x32
+    'buildings/electric_pole',     // 32x32
+    'buildings/burner_generator',  // 64x64 (2x2)
+    'buildings/electric_inserter', // 32x32
     // personagem
     'player/player'             // folha 128x128
   ];

@@ -29,6 +29,8 @@ quando chegar, **50 por minuto**.
 | **Fornalha de pedra** | **20** peças/min (1 a cada 3 s) | 2 carvões/min | 10 peças |
 | **Inseridor a carvão** | move **60** itens/min (1/s) | 0,6 carvão/min | ~2 minutos de trabalho |
 | **Esteira** | leva 858 itens/min (14,3/s) | nada | — |
+| **Inseridor elétrico** | move **60** itens/min (1/s) | **5 W** | — (ver §6) |
+| **Gerador a carvão** | põe **100 W** na rede | 2 carvões/min a plena carga | — |
 | *Mineradora elétrica* | *50 minérios/min* | *eletricidade* | *— (Fase 4)* |
 
 O ouro é o único que foge: demora **4,5 s** em vez de 3 s, então a fornalha faz
@@ -105,19 +107,43 @@ Uma mineradora de ferro → esteira → inseridor → fornalha → inseridor →
 
 ---
 
-## 6. A eletricidade — decidido e a decidir
+## 6. A eletricidade
 
-Decidido por ele em **08/09/2026**, junto com o pedido da era da eletricidade:
+> A unidade é o **watt (W)**, escolha dele. Os números de partida também são
+> dele: **gerador a carvão = 100 W**, **inseridor elétrico = 5 W**,
+> **montadora = 10 W** (a montadora ainda não existe; o número já está reservado).
 
-- **As duas linhas convivem.** O forno de pedra, a mineradora a carvão e o inseridor
-  a combustível **continuam existindo**. A eletricidade traz as versões elétricas ao
-  lado deles — forno elétrico, inseridor elétrico, montadora — como no Factorio.
-- **Gerador a combustão**: uma estrutura só, que aceita **carvão e madeira**, usando
-  a tabela de queima da §3 (1 carvão = 30 s, 1 madeira = 10 s).
-- **Base para começar: o gerador a combustão produz 100.** É um número redondo só
-  para ter de onde partir; o consumo de cada máquina sai depois, a partir dele.
+### A regra
 
-### A rede, em números (decidido)
+**O gerador só queima o que a rede usa.** Uma rede parada não come carvão nenhum.
+A plena carga ele gasta como qualquer máquina do jogo — **1 carvão a cada 30 s**,
+que é a medida da §3. Ou seja:
+
+> **100 W custam 2 carvões por minuto.**
+
+Disso sai o resto, direto:
+
+| Máquina | Consome | Por gerador cabem | Custo em carvão |
+|---|---|---|---|
+| **Inseridor elétrico** | **5 W** | **20** | 0,1 carvão/min |
+| *Montadora* (Fase 3) | *10 W* | *10* | *0,2 carvão/min* |
+| **Gerador a carvão** | — | põe **100 W** | 2 carvões/min a plena carga |
+
+### O que isso quer dizer no jogo
+
+O inseridor a carvão come **0,6 carvão/min** (§2). O elétrico faz o mesmo trabalho
+— 60 itens por minuto — por **0,1 carvão/min**.
+
+> **O inseridor elétrico é seis vezes mais barato em carvão que o a combustível.**
+
+É esse número que paga a eletricidade: você gasta cobre e ferro uma vez, monta a
+rede, e a fábrica inteira passa a comer seis vezes menos. Um gerador sozinho
+sustenta 20 inseridores, que é mais braço do que uma base pequena costuma ter.
+
+**Quando falta energia, ninguém para.** Se a rede pede 200 W e só tem 100 W, todo
+mundo trabalha a 50% — como no Factorio. Dobrar o gerador resolve.
+
+### A rede, em números
 
 | Coisa | Número |
 |---|---|
@@ -126,10 +152,8 @@ Decidido por ele em **08/09/2026**, junto com o pedido da era da eletricidade:
 | De onde saem os 7 | 5 da zona de um + **2 de vão** + 5 da zona do outro = **12 quadrados** de ponta a ponta. Do centro de um ao centro do outro dá 7 |
 | Mais perto que isso | vale — dois postes podem até ficar colados |
 | Ligação | todo poste dentro do alcance se liga, e a rede segue de poste em poste |
-| **Fio de cobre** | 1 chapa de cobre → **2 fios** (a mesma proporção da engrenagem) |
-| **Poste elétrico** | **2 madeiras + 1 fio de cobre** |
 | Máquina ligada | quando estiver **dentro da zona 5×5** de algum poste da rede |
-| Energia da água | fica para quando houver fluidos |
+| O gerador também | precisa estar na zona de um poste para entregar os watts |
 
 ```
         zona do poste A          vão         zona do poste B
@@ -143,21 +167,22 @@ Decidido por ele em **08/09/2026**, junto com o pedido da era da eletricidade:
                     de A até B: 7 quadrados
 ```
 
-### O que falta decidir
+### As receitas
 
-1. **A unidade de energia.** Watt, megawatt, ou um nome próprio do jogo? Muda só o
-   texto na tela, mas é melhor escolher antes de escrever em dez lugares.
-2. **Quanto cada máquina consome.** A partir dos 100 do gerador: quantas fornalhas
-   elétricas um gerador sustenta? E quantos inseridores? É a mesma pergunta que a
-   §1 respondeu para o carvão ("1 mineradora = 1,5 fornalhas"), agora para a energia.
-3. **A mineradora elétrica** já está definida em 50/min = 2,5 fornalhas (§2), mas
-   falta o consumo dela.
-4. **A montadora** (Fase 3) ainda não tem tempo definido. A pergunta é quantas
-   engrenagens por minuto ela faz — e daí sai quantas fornalhas ela consome.
-5. **Madeira como combustível de emergência**: hoje três madeiras valem um carvão.
-   Se quiser que a madeira seja só para o comecinho, é só baixar para 5 s.
+| Item | Sai de | Rende |
+|---|---|---|
+| **Fio de cobre** | 1 chapa de cobre | **2 fios** |
+| **Circuito eletrônico** | 2 fios de cobre + 1 chapa de ferro | 1 |
+| **Poste elétrico** | 2 madeiras + 1 fio de cobre | 1 |
+| **Inseridor elétrico** | 1 engrenagem + 1 circuito + 1 chapa de ferro | 1 |
+| **Gerador a carvão** | 5 chapas de ferro + 5 engrenagens + 5 tijolos de pedra | 1 |
 
----
+A conta do gerador é a única que não veio dele: é uma proposta, fácil de mexer em
+`data.js`. O resto é o que ele pediu.
+
+Em material bruto, um **inseridor elétrico** custa 1 chapa de cobre e 4 de ferro
+(1 para o circuito, 2 para a engrenagem, 1 dele). O **poste** custa 2 madeiras e
+meia chapa de cobre — barato de propósito, porque você vai plantar muitos.
 
 ## 7. Como estes números são conferidos
 

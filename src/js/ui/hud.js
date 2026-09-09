@@ -860,6 +860,12 @@
         g1.appendChild(criarSlot({ slots: e.inv.geral, i: i, contexto: 'chest' }));
       }
       top.appendChild(g1);
+    } else if (b.tipo === 'pole') {
+      var infoP = document.createElement('p');
+      infoP.className = 'maq-estado';
+      infoP.textContent = 'Atende ' + b.zona + '×' + b.zona +
+        ' quadrados em volta e liga em outro poste a até ' + b.alcanceFio + '.';
+      top.appendChild(infoP);
     } else {
       if (e.inv.fuel) top.appendChild(blocoSlot(e, 'fuel', '🔥 Combustível'));
       if (e.inv.input) top.appendChild(blocoSlot(e, 'input', '⛏ Entrada'));
@@ -1223,6 +1229,34 @@
       chama = e.queimaMax > 0 ? e.queima / e.queimaMax : 0;
       sig += ':' + sob + ':' + assinaturaSlots([e.inv.output[0], e.inv.fuel[0]]);
 
+    } else if (b.tipo === 'pole') {
+      var rede = global.FZ.Energia ? global.FZ.Energia.redeDe(e) : null;
+      if (!rede) {
+        linhas += linhaItem(null, 'Rede', 'poste solto');
+      } else {
+        linhas += linhaItem(null, 'Na rede', Math.round(rede.producao) + ' W');
+        linhas += linhaItem(null, 'Em uso', Math.round(rede.demanda) + ' W');
+        linhas += linhaItem(null, 'Postes ligados', String(rede.postes.length));
+        linhas += linhaItem(null, 'Geradores', String(rede.geradores.length));
+        linhas += linhaItem(null, 'Máquinas', String(rede.consumidores.length));
+        if (rede.demanda > rede.producao) {
+          nota = 'Falta energia: tudo anda a ' + Math.round(rede.satisfacao * 100) + '%';
+        }
+      }
+      nota = (nota ? nota + '<br>' : '') + 'Atende ' + b.zona + '×' + b.zona +
+        ' em volta · liga a até ' + b.alcanceFio + ' quadrados';
+      sig += ':' + (rede ? rede.producao + '/' + rede.demanda + '/' + rede.postes.length : 'solto');
+
+    } else if (b.tipo === 'generator') {
+      var rg = global.FZ.Energia ? global.FZ.Energia.redeDe(e) : null;
+      linhas += linhaSlot(e.inv.fuel[0], 'Combustível', 'sem combustível');
+      linhas += linhaItem(null, 'Pode dar', b.producao + ' W');
+      linhas += linhaItem(null, 'Dando agora', Math.round(b.producao * (e.carga || 0)) + ' W');
+      if (!rg) nota = 'Fora da rede — falta um poste cobrindo ele';
+      else nota = 'Só queima o que a rede usa: a plena carga, 2 carvões por minuto';
+      chama = e.queimaMax > 0 ? e.queima / e.queimaMax : 0;
+      sig += ':' + Math.round((e.carga || 0) * 100) + ':' + assinaturaSlots([e.inv.fuel[0]]);
+
     } else if (b.tipo === 'chest') {
       var itens = agrupar(e.inv.geral);
       if (!itens.length) linhas += linhaItem(null, 'Vazio', '—');
@@ -1243,10 +1277,20 @@
 
     } else if (b.tipo === 'inserter') {
       linhas += linhaItem(e.segurando, 'Na mão', e.segurando ? D.itemNome(e.segurando) : 'nada');
-      linhas += linhaSlot(e.inv.fuel[0], 'Combustível', 'sem combustível');
+      if (b.eletrico) {
+        var En = global.FZ.Energia;
+        var rede2 = En ? En.redeDe(e) : null;
+        linhas += linhaItem(null, 'Bebe', b.consumo + ' W');
+        linhas += linhaItem(null, 'Energia',
+          !rede2 ? 'fora da rede' : Math.round(En.forca(e) * 100) + '%');
+      } else {
+        linhas += linhaSlot(e.inv.fuel[0], 'Combustível', 'sem combustível');
+      }
       nota = 'Pega do ' + nomeDir((e.dir + 2) % 4) + ' e põe no ' + nomeDir(e.dir) + ' · R gira';
-      chama = e.queimaMax > 0 ? e.queima / e.queimaMax : 0;
-      sig += ':' + (e.segurando || '-') + ':' + assinaturaSlots([e.inv.fuel[0]]);
+      if (!b.eletrico) chama = e.queimaMax > 0 ? e.queima / e.queimaMax : 0;
+      sig += ':' + (e.segurando || '-') +
+        (b.eletrico ? ':' + Math.round((global.FZ.Energia ? global.FZ.Energia.forca(e) : 0) * 100)
+                    : ':' + assinaturaSlots([e.inv.fuel[0]]));
     }
 
     if (b.giravel && b.tipo !== 'inserter')

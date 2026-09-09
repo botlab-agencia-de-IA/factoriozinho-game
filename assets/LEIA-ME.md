@@ -143,6 +143,11 @@ Marque conforme for fazendo. **O nome tem que ser exatamente esse.**
 | `iron_chest.png` | Ícone do baú de ferro |
 | `transport_belt.png` | Ícone da esteira |
 | `inserter.png` | Ícone do inseridor |
+| `copper_wire.png` | Fio de cobre |
+| `electronic_circuit.png` | Circuito eletrônico |
+| `electric_pole.png` | Ícone do poste elétrico |
+| `burner_generator.png` | Ícone do gerador a carvão |
+| `electric_inserter.png` | Ícone do inseridor elétrico |
 
 ### `assets/buildings/` — as estruturas no mundo
 | Arquivo | Grade | O que é |
@@ -153,6 +158,9 @@ Marque conforme for fazendo. **O nome tem que ser exatamente esse.**
 | `iron_chest.png` | `32×32` | Baú de ferro (1×1) |
 | `transport_belt.png` | `32×32` | Esteira (1×1) — desenhe apontando **para cima**; o jogo gira sozinho |
 | `inserter.png` | `32×32` | Inseridor (1×1) — só a **base**, sem o braço; o braço é desenhado por cima e se mexe |
+| `electric_pole.png` | `32×32` | Poste elétrico (1×1) — desenhe o mastro no **meio** do tile; o fio sai do alto e é desenhado por código |
+| `burner_generator.png` | `64×64` | Gerador a carvão (2×2) |
+| `electric_inserter.png` | `32×32` | Inseridor elétrico (1×1) — só a **base**, como o outro. Hoje é **vermelho** para não se confundir com o a carvão |
 
 ### `assets/player/`
 | Arquivo | Grade | O que é |

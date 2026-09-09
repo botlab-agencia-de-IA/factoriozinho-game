@@ -75,6 +75,7 @@
       return porNaEsteira(alvo, item, f);
     }
     if (b.tipo === 'inserter') {
+      if (b.eletrico) return false;          // o elétrico não come nada
       // inseridor só aceita combustível (não se usa inseridor como depósito)
       if (D.fuelValue(item) > 0 && !combustivelNoLimite(alvo) && Inv.cabe(alvo.inv.fuel, item, 1)) {
         return Inv.add(alvo.inv.fuel, item, 1) === 0;
@@ -95,7 +96,7 @@
       }
       return false;
     }
-    if (b.tipo === 'drill') {
+    if (b.tipo === 'drill' || b.tipo === 'generator') {
       if (D.fuelValue(item) > 0 && !combustivelNoLimite(alvo) && Inv.cabe(alvo.inv.fuel, item, 1)) {
         return Inv.add(alvo.inv.fuel, item, 1) === 0;
       }
@@ -453,6 +454,7 @@
     if (b.tipo === 'belt') return true;
     if (b.tipo === 'chest') return Inv.cabe(alvo.inv.geral, item, 1);
     if (b.tipo === 'inserter') {
+      if (b.eletrico) return false;
       return D.fuelValue(item) > 0 && !combustivelNoLimite(alvo) &&
              Inv.cabe(alvo.inv.fuel, item, 1);
     }
@@ -463,7 +465,7 @@
       }
       return false;
     }
-    if (b.tipo === 'drill') {
+    if (b.tipo === 'drill' || b.tipo === 'generator') {
       return D.fuelValue(item) > 0 && !combustivelNoLimite(alvo) &&
              Inv.cabe(alvo.inv.fuel, item, 1);
     }
@@ -576,6 +578,17 @@
 
   var _candidatos = [];        // reaproveitado, para não alocar por quadro
 
+  /* O que move o inseridor neste quadro.
+     No de carvão é a chama: 1 se está acesa, 0 se apagou.
+     No elétrico é a rede: 1 com energia sobrando, uma fração quando a
+     rede está curta (aí ele trabalha devagar, como no Factorio), 0 sem
+     poste por perto. */
+  function forcaDoInseridor(e, b, dt) {
+    if (!b.eletrico) return manterChama(e) ? 1 : 0;
+    var f = global.FZ.Energia ? global.FZ.Energia.forca(e) : 0;
+    return f;
+  }
+
   function updateInserter(e, dt) {
     var b = D.building(e.tipo);
     var frente = tileSaida(e);
@@ -584,8 +597,9 @@
     /* --- no seco, ele se serve do que passa atrás ---
        Inseridor sem combustível não trabalha, então nunca conseguiria
        se reabastecer sozinho. Como no Factorio, ele tem esse direito:
-       se tem combustível ao alcance atrás, pega para si. */
-    if (semCombustivel(e)) {
+       se tem combustível ao alcance atrás, pega para si.
+       O elétrico não precisa disso: ele não come nada. */
+    if (!b.eletrico && semCombustivel(e)) {
       var atras = World.entityAt(tras.x, tras.y);
       if (atras) {
         var lista = itensAoAlcance(atras, _candidatos);
@@ -603,14 +617,16 @@
     /* --- já está com algo na mão: leva para a frente --- */
     if (e.segurando) {
       var alvo = World.entityAt(frente.x, frente.y);
-      if (!alvo) { e.ativo = false; e.semDestino = true; return; }
+      if (!alvo) { e.ativo = false; e.semDestino = true; e.querEnergia = false; return; }
       e.semDestino = false;
 
-      if (!manterChama(e)) { e.ativo = false; return; }
+      var forca = forcaDoInseridor(e, b, dt);
+      if (forca <= 0) { e.ativo = false; e.querEnergia = true; return; }
+      e.querEnergia = true;
 
       e.ativo = true;
-      e.queima -= dt * b.gastoCombustivel;
-      e.progresso += dt * b.velocidade;
+      if (!b.eletrico) e.queima -= dt * b.gastoCombustivel;
+      e.progresso += dt * b.velocidade * forca;
 
       if (e.progresso >= 1) {
         if (aceitarItem(alvo, e.segurando, e)) {   // `e` define a faixa da esteira
@@ -626,11 +642,11 @@
 
     /* --- mão vazia: procura o que pegar atrás --- */
     var origem = World.entityAt(tras.x, tras.y);
-    if (!temParaDar(origem)) { e.ativo = false; e.progresso = 0; e.naoServe = false; return; }
+    if (!temParaDar(origem)) { e.ativo = false; e.progresso = 0; e.naoServe = false; e.querEnergia = false; return; }
 
     // só pega se tiver para onde levar
     var destino = World.entityAt(frente.x, frente.y);
-    if (!destino) { e.ativo = false; e.semDestino = true; return; }
+    if (!destino) { e.ativo = false; e.semDestino = true; e.querEnergia = false; return; }
     e.semDestino = false;
 
     /* de tudo que está ao alcance atrás, o que o destino quer agora?
@@ -641,14 +657,16 @@
     for (var i = 0; i < candidatos.length; i++) {
       if (destinoQuer(destino, candidatos[i])) { escolhido = candidatos[i]; break; }
     }
-    if (!escolhido) { e.ativo = false; e.naoServe = true; e.progresso = 0; return; }
+    if (!escolhido) { e.ativo = false; e.naoServe = true; e.progresso = 0; e.querEnergia = false; return; }
     e.naoServe = false;
 
-    if (!manterChama(e)) { e.ativo = false; return; }
+    var forca2 = forcaDoInseridor(e, b, dt);
+    if (forca2 <= 0) { e.ativo = false; e.querEnergia = true; return; }
+    e.querEnergia = true;
 
     e.ativo = true;
-    e.queima -= dt * b.gastoCombustivel;
-    e.progresso += dt * b.velocidade;
+    if (!b.eletrico) e.queima -= dt * b.gastoCombustivel;
+    e.progresso += dt * b.velocidade * forca2;
 
     if (e.progresso >= 1) {
       var pego = retirarItemDe(origem, escolhido);
@@ -669,7 +687,13 @@
       else if (b.tipo === 'drill') updateDrill(e, dt);
       else if (b.tipo === 'belt') updateBelt(e, dt);
       else if (b.tipo === 'inserter') updateInserter(e, dt);
+      // gerador e poste não têm vida própria: quem cuida deles é a rede
     }
+
+    /* A rede fecha a conta depois de todo mundo dizer se quer trabalhar
+       neste quadro — assim um inseridor parado não faz o gerador queimar
+       carvão à toa. */
+    if (global.FZ.Energia) global.FZ.Energia.update(dt);
   }
 
   /** Junta tudo que está dentro da máquina (para devolver ao remover). */
@@ -712,11 +736,40 @@
       return 'Levando ' + n + (n > 1 ? ' itens ' : ' item ') + lados;
     }
 
+    if (b.tipo === 'pole') {
+      var rede = global.FZ.Energia ? global.FZ.Energia.redeDe(e) : null;
+      if (!rede) return 'Poste solto';
+      var quantos = rede.postes.length;
+      if (rede.producao <= 0) return 'Rede sem gerador' + (quantos > 1 ? ' (' + quantos + ' postes)' : '');
+      return Math.round(rede.producao) + ' W na rede · ' +
+             Math.round(rede.demanda) + ' W em uso' +
+             (quantos > 1 ? ' · ' + quantos + ' postes' : '');
+    }
+
+    if (b.tipo === 'generator') {
+      if (semCombustivel(e)) return 'Sem combustível';
+      if (!global.FZ.Energia || !global.FZ.Energia.temRede(e)) {
+        return 'Fora da rede — falta um poste por perto';
+      }
+      if (!e.ativo) return 'Aceso, mas ninguém puxando';
+      return 'Gerando ' + Math.round((b.producao || 0) * (e.carga || 0)) + ' W' +
+             ' de ' + b.producao + ' W';
+    }
+
     if (b.tipo === 'inserter') {
       if (e.semDestino) return 'Sem nada na frente para receber';
-      if (semCombustivel(e)) return 'Sem combustível';
+      if (b.eletrico) {
+        var falta = global.FZ.Energia ? global.FZ.Energia.estadoDaMaquina(e) : 'Sem rede';
+        if (falta && !e.ativo) return falta;
+      } else if (semCombustivel(e)) {
+        return 'Sem combustível';
+      }
       if (e.naoServe) return 'Nada que sirva na frente';
-      if (e.ativo) return e.segurando ? 'Entregando ' + D.itemNome(e.segurando) : 'Pegando';
+      if (e.ativo) {
+        var lento = b.eletrico && global.FZ.Energia ? global.FZ.Energia.estadoDaMaquina(e) : null;
+        var base = e.segurando ? 'Entregando ' + D.itemNome(e.segurando) : 'Pegando';
+        return lento ? base + ' — ' + lento.toLowerCase() : base;
+      }
       if (e.segurando) return 'Destino cheio';
       return 'Nada para pegar atrás';
     }

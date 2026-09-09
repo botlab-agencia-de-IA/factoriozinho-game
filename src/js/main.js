@@ -5,8 +5,8 @@
 (function (global) {
   'use strict';
 
-  var VERSION = '0.9.0';
-  var PHASE = 'Fase 2 — a mesma mochila em toda janela';
+  var VERSION = '0.9.1';
+  var PHASE = 'Fase 4 — a era da eletricidade começa';
 
   function boot() {
     global.FZ.Settings.load();

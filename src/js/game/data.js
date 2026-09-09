@@ -104,13 +104,24 @@
     iron_pickaxe:  { nome: 'Picareta de ferro',   stack: STACK, nivel: 3, cor: '#b6bec8', forma: 'ferramenta' },
     gold_pickaxe:  { nome: 'Picareta de ouro',    stack: STACK, nivel: 4, cor: '#f0c850', forma: 'ferramenta' },
 
+    /* --- peças --- */
+    copper_wire:       { nome: 'Fio de cobre',        stack: STACK, cor: '#e08a5a', forma: 'fio' },
+    electronic_circuit:{ nome: 'Circuito eletrônico', stack: STACK, cor: '#5f9950', forma: 'circuito' },
+
     /* --- construções --- */
     stone_furnace:{ nome: 'Forno de pedra',      stack: STACK, constroi: 'stone_furnace', cor: '#7d8390', forma: 'predio' },
     burner_drill: { nome: 'Mineradora a carvão', stack: STACK, constroi: 'burner_drill',  cor: '#c98a3a', forma: 'predio' },
     wooden_chest: { nome: 'Baú de madeira',      stack: STACK, constroi: 'wooden_chest',  cor: '#a06a3c', forma: 'predio' },
     iron_chest:   { nome: 'Baú de ferro',        stack: STACK, constroi: 'iron_chest',    cor: '#8e99a5', forma: 'predio' },
     transport_belt:{ nome: 'Esteira',            stack: STACK, constroi: 'transport_belt', cor: '#6b7280', forma: 'esteira' },
-    inserter:     { nome: 'Inseridor',           stack: STACK, constroi: 'inserter',      cor: '#c4a33a', forma: 'braco' }
+    inserter:     { nome: 'Inseridor',           stack: STACK, constroi: 'inserter',      cor: '#c4a33a', forma: 'braco' },
+
+    /* --- a era da eletricidade --- */
+    electric_pole:     { nome: 'Poste elétrico',     stack: STACK, constroi: 'electric_pole',     cor: '#a97c4a', forma: 'poste' },
+    burner_generator:  { nome: 'Gerador a carvão',   stack: STACK, constroi: 'burner_generator',  cor: '#8d6a4a', forma: 'predio' },
+    /* vermelho de propósito, escolha dele: é o jeito de bater o olho e
+       saber qual inseridor é o elétrico enquanto a arte não chega */
+    electric_inserter: { nome: 'Inseridor elétrico', stack: STACK, constroi: 'electric_inserter', cor: '#d24b3f', forma: 'braco' }
   };
 
   /* ---------------- receitas de mão ----------------
@@ -133,7 +144,15 @@
     { saida: 'burner_drill',   qtd: 1, tempo: 2.0, cat: 'estrutura',  custo: { iron_gear: 3, iron_plate: 3, stone_furnace: 1 } },
     { saida: 'transport_belt', qtd: 2, tempo: 0.5, cat: 'estrutura',  custo: { iron_gear: 1, iron_plate: 1 } },
     { saida: 'inserter',       qtd: 1, tempo: 0.5, cat: 'estrutura',  custo: { iron_gear: 1, iron_plate: 1, copper_plate: 1 } },
-    { saida: 'iron_gear',      qtd: 1, tempo: 0.5, cat: 'item',       custo: { iron_plate: 2 } }
+    { saida: 'iron_gear',      qtd: 1, tempo: 0.5, cat: 'item',       custo: { iron_plate: 2 } },
+
+    /* --- a era da eletricidade ---
+       1 chapa de cobre rende 2 fios, a mesma proporção da engrenagem. */
+    { saida: 'copper_wire',        qtd: 2, tempo: 0.5, cat: 'item',      custo: { copper_plate: 1 } },
+    { saida: 'electronic_circuit', qtd: 1, tempo: 0.5, cat: 'item',      custo: { copper_wire: 2, iron_plate: 1 } },
+    { saida: 'electric_pole',      qtd: 1, tempo: 0.5, cat: 'estrutura', custo: { wood: 2, copper_wire: 1 } },
+    { saida: 'burner_generator',   qtd: 1, tempo: 2.0, cat: 'estrutura', custo: { iron_plate: 5, iron_gear: 5, stone_brick: 5 } },
+    { saida: 'electric_inserter',  qtd: 1, tempo: 0.5, cat: 'estrutura', custo: { iron_gear: 1, electronic_circuit: 1, iron_plate: 1 } }
   ];
 
   /** Em que seção a receita cai. Sem 'cat' escrito, deduz pelo item. */
@@ -207,6 +226,48 @@
       slots: {},
       cor: '#6b7280', cor2: '#4b5159',
       dica: 'Leva os itens sozinha, na direção da seta. Não precisa de combustível.'
+    },
+    /* ---------------- a era da eletricidade ----------------
+       A regra da rede, decidida por ele: a zona do poste é 5x5 com o
+       poste no meio, e o fio alcança 7 quadrados de centro a centro —
+       5 da zona de um, 2 de vão, 5 da zona do outro, 12 de ponta a
+       ponta. Ver documentos/MATEMATICA.md §6. */
+    electric_pole: {
+      nome: 'Poste elétrico',
+      tipo: 'pole',
+      w: 1, h: 1,
+      giravel: false,
+      atravessavel: true,        // é um poste fino: dá para passar por ele
+      zona: 5,                   // atende um quadrado de 5x5 em volta
+      alcanceFio: 7,             // de centro a centro do próximo poste
+      slots: {},
+      cor: '#a97c4a', cor2: '#7d5a35',
+      dica: 'Leva energia num quadrado de 5×5. Liga em outro poste a até 7 quadrados.'
+    },
+    burner_generator: {
+      nome: 'Gerador a carvão',
+      tipo: 'generator',
+      w: 2, h: 2,
+      giravel: false,
+      producao: 100,             // watts, com o fogo aceso
+      slots: { fuel: 1 },
+      cor: '#8d6a4a', cor2: '#6b4f37',
+      dica: 'Queima carvão ou madeira e põe 100 W na rede. Precisa estar na zona de um poste.'
+    },
+    electric_inserter: {
+      nome: 'Inseridor elétrico',
+      tipo: 'inserter',
+      eletrico: true,            // sem combustível: bebe da rede
+      consumo: 5,                // watts
+      w: 1, h: 1,
+      giravel: true,
+      /* mesmos 2 ciclos por segundo do inseridor a carvão — cada item
+         gasta dois, um para pegar e outro para entregar, então isso dá
+         1 item por segundo, 60 por minuto. Ver MATEMATICA.md §5. */
+      velocidade: 2.0,
+      slots: {},
+      cor: '#d24b3f', cor2: '#9c342b',
+      dica: 'Não come carvão: precisa estar na zona de um poste com energia.'
     },
     inserter: {
       nome: 'Inseridor',

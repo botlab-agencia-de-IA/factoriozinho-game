@@ -84,7 +84,15 @@
     wooden_chest:   ['#A86532', '#D69A58', '#784321', '#F0C27A', '#51301E'],
     iron_chest:     ['#7E8791', '#B6BEC8', '#5D656E', '#DCE3EA', '#3E454D'],
     transport_belt: ['#515D66', '#78838C', '#35404A', '#A7B2B8', '#22292E'],
-    inserter:       ['#C99A2D', '#F2CB55', '#8A651E', '#FFE38A', '#5F4614']
+    inserter:       ['#C99A2D', '#F2CB55', '#8A651E', '#FFE38A', '#5F4614'],
+
+    /* --- a era da eletricidade --- */
+    electric_pole:     ['#A97C4A', '#D2A472', '#7D5A35', '#EAC79A', '#553B22'],
+    burner_generator:  ['#8D6A4A', '#B89372', '#6B4F37', '#D8B694', '#4A3625'],
+    /* vermelho, escolha dele, para diferenciar do inseridor a carvão */
+    electric_inserter: ['#D24B3F', '#F07A6C', '#9C342B', '#FFA79A', '#6B2019'],
+    copper_wire:       ['#E08A5A', '#F5B189', '#B3603F', '#FFD2B8', '#7D3F26'],
+    electronic_circuit:['#5F9950', '#8FC47F', '#417034', '#B9E3AA', '#2B4C22']
   };
 
   /* ============================================================
