@@ -10,6 +10,7 @@ o resultado achatado: dá para editar, mas não dá para "desachatar".
 |---|---|
 | `TORA DE MADEIRA.piskel` | `assets/items/wood.png` |
 | `ENGRENAGEM.piskel` | `assets/items/iron_gear.png` |
+| `PEDREGULHO.piskel` | `assets/world/rock.png` |
 | `INGOT FERRO com brilho.piskel` | `assets/items/iron_plate.png` |
 | `INGOT FERRO.piskel` | (versão antiga, sem o tom de brilho — guardada só como histórico) |
 

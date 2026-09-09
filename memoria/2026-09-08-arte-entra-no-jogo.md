@@ -42,6 +42,7 @@ sujeira no meio do lingote derivado.
 | `assets/items/iron_plate.png` | lingote do Vandré + 8 pixels de `#F2FAF8` na quina |
 | `assets/items/copper_plate.png` | derivado do ferro por troca de cor |
 | `assets/items/gold_plate.png` | derivado do ferro por troca de cor |
+| `assets/world/rock.png` | pedregulho do Vandré: facetas com brilho, primeira peça do **mundo** (as outras eram ícones de item) |
 
 **O caso da engrenagem** (vale lembrar, porque vai se repetir): ela chegou com 26
 cores. O Vandré tinha desenhado por cima de uma imagem de referência importada, e o
@@ -55,7 +56,11 @@ mais próxima da paleta; todos viraram preto de contorno e o desenho ficou idên
 
 **Combinado depois disso:** antes de eu mexer em qualquer arquivo que ele desenhou,
 eu guardo o original. Nessa vez eu sobrescrevi o `ENGRENAGEM.png` sem cópia — deu
-para reconstruir, mas não devia ter acontecido.
+para reconstruir, mas não devia ter acontecido. **No pedregulho já foi assim:** o
+arquivo entrou no jogo exatamente como saiu do Piskel e foi commitado antes de eu
+tocar nele (commit `fc95fb5`); só depois vieram os 2 pixels de correção
+(`#C9D2DA`→`#D2DADF` em 12,6 e `#131A35`→`#35404A` em 7,10). O original está no
+histórico do git.
 
 ## Organização que ficou
 
@@ -74,8 +79,9 @@ para reconstruir, mas não devia ter acontecido.
 `glass`, `stone_brick`, e os ícones das estruturas (`stone_furnace`, `burner_drill`,
 `wooden_chest`, `transport_belt`, `inserter`).
 
-Falta também o mundo (`tiles/`, `world/tree` em 32×48, `world/rock`), as estruturas
-em `buildings/` e o personagem. A lista completa, com grade e nome de arquivo, está
+Do mundo, o **pedregulho já está feito**; faltam os `tiles/` (chão e jazidas) e a
+**árvore** (`world/tree`, a única peça alta: `32×48`). Faltam também as estruturas em
+`buildings/` e o personagem. A lista completa, com grade e nome de arquivo, está
 em `assets/LEIA-ME.md`.
 
 **Cores ainda não definidas** (`documentos/CORES.md` está com `#______`): urânio,
