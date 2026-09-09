@@ -12,7 +12,7 @@ desktop.ini
 node_modules/
 package-lock.json
 
-# Arquivos temporários de arte
-*.piskel
+# Arquivos temporários de arte (os .piskel de assets/_piskel/ são versionados)
+/*.piskel
 *~
 *.tmp
