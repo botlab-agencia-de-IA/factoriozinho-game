@@ -5,8 +5,8 @@
 (function (global) {
   'use strict';
 
-  var VERSION = '0.9.1';
-  var PHASE = 'Fase 4 — a era da eletricidade começa';
+  var VERSION = '0.9.2';
+  var PHASE = 'Fase 4 — a eletricidade, ajustada';
 
   function boot() {
     global.FZ.Settings.load();

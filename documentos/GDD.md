@@ -4,7 +4,7 @@
 > reescrever à vontade — eu leio este arquivo antes de mexer no código. Se algo
 > aqui estiver diferente do jogo, o arquivo ganha.
 >
-> Última atualização: 08/09/2026 · Versão do doc: **0.9.1** · Jogo: **v0.9.1**
+> Última atualização: 08/09/2026 · Versão do doc: **0.9.2** · Jogo: **v0.9.2**
 >
 > 📦 Código no GitHub: **botlab-agencia-de-IA/factoriozinho-game** (privado)
 > 🧪 Para testar sem abrir o jogo: duplo clique no `testar.bat`
@@ -689,7 +689,7 @@ regiões viraram células com centro sorteado e fronteira embaralhada por ruído
 
 ## 9.5 📍 Onde paramos
 
-**08/09/2026 — v0.9.1, a eletricidade começou (Fase 4 antecipada).**
+**08/09/2026 — v0.9.2, a eletricidade no jogo e ajustada.**
 
 Funcionando: mundo finito por semente, coleta manual, inventário e fabricação,
 construção, forno, mineradora, baú, **esteiras de duas faixas com side-load e curva
@@ -744,6 +744,7 @@ cores que faltam estão no `CORES.md`.
 
 | Data | O que mudou |
 |---|---|
+| 08/09/2026 | **v0.9.2** — Ajustes do teste dele na eletricidade. **Não dava para pôr carvão nem madeira no gerador**: a função que decide para qual slot da máquina vai o item na mão (`slotDestinoNaMaquina`) não conhecia o tipo `generator` e devolvia "não serve" — nem clicando na máquina no mundo, nem com shift+clique no painel. **A lista de fabricação mudou de regra** (§5.8): mostra **só os ingredientes diretos** da receita, sem a linha "faz antes", e a cor de cada um conta a história — **normal** já tem, **amarelo** falta mas dá para fabricar (o clique faz sozinho), **vermelho** falta e não há como fazer. A conta é real, feita pelo mesmo planejamento da fabricação em escada: 5 engrenagens com 9 chapas de ferro dá vermelho, porque 5 engrenagens custam 10 chapas. Vale para todo item novo que entrar. |
 | 08/09/2026 | **v0.9.1** — **A eletricidade entrou**, com os números dele (`MATEMATICA.md` §6). A unidade é o **watt**. **Gerador a carvão** (2×2): queima carvão ou madeira e põe **100 W** na rede — e **só queima o que a rede usa**, então rede parada não come carvão; a plena carga são 2 carvões/min, a mesma medida de sempre. **Poste elétrico** (1×1, 2 madeiras + 1 fio de cobre): atende **5×5** com ele no meio e liga em outro poste a até **7 quadrados** de centro a centro — a conta dele: 5 + 2 de vão + 5 = 12 de ponta a ponta. A rede segue de poste em poste, e o **fio é desenhado** entre eles (amarelo com energia, cinza sem). Com o poste na mão aparecem a zona 5×5 e o risco até os postes que ele alcançaria dali. **Inseridor elétrico** (vermelho, escolha dele): 1 engrenagem + 1 circuito + 1 chapa, **bebe 5 W**, não come nada — e é **seis vezes mais barato em carvão** que o a combustível, que é o que paga a eletricidade. **Falta energia? Ninguém para**: todos andam mais devagar na mesma proporção, como no Factorio. Itens novos: **fio de cobre** (1 chapa de cobre → 2 fios) e **circuito eletrônico** (2 fios + 1 chapa de ferro). Novo módulo `src/js/game/energia.js` e o teste `19-energia.js`. |
 | 08/09/2026 | **v0.9.0** — Pedidos dele antes da energia. **A mochila é a mesma em toda janela**: abrir um baú, um forno ou uma mineradora mostra a mochila de sempre embaixo — com o botão Organizar, a escolha de ordem e a barra rápida separada — e não mais uma grade solta de 40 slots. **Baú de ferro**: 5 placas de ferro, **24 pilhas** (oito a mais que o de madeira). E ficaram **registradas as decisões da eletricidade** (`MATEMATICA.md` §6), que é o que vem em seguida: gerador a combustão que aceita carvão e madeira, fio de cobre (1 chapa → 2 fios), poste de 2 madeiras + 1 fio, zona 5×5 com o poste no meio, **alcance de fio de 7 quadrados** (5 + 2 de vão + 5 = 12 de ponta a ponta), a rede seguindo de poste em poste, e as versões a combustão convivendo com as elétricas. |
 | 08/09/2026 | **v0.8.9** — A mochila e a fabricação, do jeito dele. **Botão Organizar**, com escolha de ordem: **por nome** ou **por quantidade** (a escolha fica guardada nas configurações). **A roda do mouse em cima de qualquer slot organiza** — era o único botão livre ali dentro. Organizar **nunca mexe na barra rápida**: a picareta que está no 1 continua no 1. E a **barra rápida agora aparece separada** no fim da mochila, com as teclas 1 a 8 escritas, no jeito do Minecraft — antes eram os 8 primeiros slots da grade e nada dizia isso. **A janela da mochila tem tamanho travado** (620px de altura): antes ela crescia conforme a fila e a lista de receitas enchiam, e ficava pulando de tamanho no meio do jogo; agora o que passa rola por dentro. **A fila de fabricação saiu da janela e foi para o canto de baixo à direita da tela**, visível com a mochila aberta ou fechada, com ícone, barra de progresso do que está sendo feito e quantos estão esperando. **Fabricação em escada** (§5.8), como no Factorio: com chapa e pedra na mochila, clicar na mineradora faz as 3 engrenagens, o forno e só então a mineradora — e os pedaços não passam pela mochila, vão direto para o próximo degrau. A receita mostra na lista o que será feito antes. Cancelar cancela **o pedido inteiro** e devolve tudo; o que já ficou pronto volta como peça pronta em vez de evaporar. Novo teste `18-organizar-e-cascata.js`. |

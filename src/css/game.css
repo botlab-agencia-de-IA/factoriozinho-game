@@ -671,18 +671,12 @@ body.jogando .screen.is-active {
 .receita b { font-size: .85rem; font-weight: 600; }
 .receita small { font-size: .7rem; color: var(--txt-faint); }
 .receita i { font-style: normal; }
+/* As três cores de um ingrediente, e a regra vale para todo item novo:
+     normal   já tem na mochila
+     amarelo  falta, mas dá para fabricar — clicar resolve sozinho
+     vermelho falta e não há como fazer agora */
+.receita i.pode  { color: var(--amber); }
 .receita i.falta { color: var(--red); }
-
-/* receita que só sai fazendo os pedaços antes: dá para clicar, mas o
-   painel avisa o que vai ser feito no caminho */
-.receita.cascata { border-left: 2px solid var(--amber); }
-.receita .antes {
-  display: block;
-  font-style: normal;
-  font-size: .66rem;
-  color: var(--amber);
-  margin-top: .12rem;
-}
 
 /* painel de máquina */
 .maq-top {

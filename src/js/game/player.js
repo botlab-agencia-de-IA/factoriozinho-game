@@ -283,6 +283,35 @@
     return planejar(p, receita, 1) !== null;
   }
 
+  /**
+   * Como está cada ingrediente da receita, para pintar a lista:
+   *   'ok'      já tem o bastante na mochila
+   *   'fazivel' falta, mas dá para fabricar com o que tem
+   *   'falta'   falta e não há como fazer — é aqui que a corrente para
+   * @returns {Object} item -> estado
+   */
+  function estadoDosIngredientes(p, receita) {
+    var plano = planejar(p, receita, 1);
+    var out = {};
+
+    for (var item in receita.custo) {
+      if (Inv.conta(p.inv, item) >= receita.custo[item]) { out[item] = 'ok'; continue; }
+
+      /* Se o pedido inteiro fecha, tudo que falta é fabricável por
+         definição — foi assim que o plano fechou. */
+      if (plano) { out[item] = 'fazivel'; continue; }
+
+      /* O pedido não fecha. Este ingrediente, sozinho, sairia? Se sim,
+         ele é amarelo: o problema está em outro, ou em não sobrar
+         material para todos ao mesmo tempo. */
+      var sub = receitaDe(item);
+      if (!sub) { out[item] = 'falta'; continue; }
+      var quanto = receita.custo[item] - Inv.conta(p.inv, item);
+      out[item] = planejar(p, sub, Math.ceil(quanto / sub.qtd)) ? 'fazivel' : 'falta';
+    }
+    return out;
+  }
+
   /** Quais pedaços seriam feitos antes deste item. Só para a tela. */
   function passosAntesDe(p, receita) {
     var plano = planejar(p, receita, 1);
@@ -415,6 +444,7 @@
     podeFabricar: podeFabricar,
     podeFabricarEmCascata: podeFabricarEmCascata,
     passosAntesDe: passosAntesDe,
+    estadoDosIngredientes: estadoDosIngredientes,
     planejar: planejar,
     receitaDe: receitaDe,
     cancelarFabricacao: cancelarFabricacao,

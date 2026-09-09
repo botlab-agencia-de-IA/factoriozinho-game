@@ -379,11 +379,16 @@
       if (D.fuelValue(item) > 0) return e.inv.fuel;  // lenha/carvão → combustível
       return null;
     }
-    if (b.tipo === 'drill' || b.tipo === 'inserter') {
-      if (D.fuelValue(item) > 0) return e.inv.fuel;
+    /* O gerador entra aqui junto com a mineradora: os três queimam
+       combustível e nada mais. Faltava ele nesta lista, e por isso não
+       dava para pôr carvão nem madeira no gerador — nem clicando nele
+       no mundo, nem com shift+clique no painel. */
+    if (b.tipo === 'drill' || b.tipo === 'generator' ||
+        (b.tipo === 'inserter' && !b.eletrico)) {
+      if (D.fuelValue(item) > 0 && e.inv.fuel) return e.inv.fuel;
       return null;
     }
-    return null;
+    return null;      // poste e inseridor elétrico não recebem nada
   }
 
   /**
@@ -650,6 +655,18 @@
     atualizarHotbar();
   }
 
+  /* A lista de receitas mostra só o que a receita PEDE — nada de explicar
+     a escada ali dentro. Quem conta a história é a cor de cada ingrediente:
+       normal   já tem na mochila;
+       amarelo  falta, mas dá para fabricar (o clique faz sozinho);
+       vermelho falta e não há como fazer — é aqui que a corrente para.
+     Vale para todo item novo que entrar no jogo. */
+  var CORES_INGREDIENTE = {
+    ok:      { classe: '',      dica: 'você já tem' },
+    fazivel: { classe: 'pode',  dica: 'falta, mas dá para fabricar — o clique faz sozinho' },
+    falta:   { classe: 'falta', dica: 'falta, e não há como fabricar agora' }
+  };
+
   function montarReceitas() {
     var lista = document.getElementById('lista-receitas');
     if (!lista) return;
@@ -668,15 +685,11 @@
 
     function montarUmaReceita(r) {
       var pode = PlayerLib.podeFabricar(g.player, r);
-      /* Não dá direto, mas dá fazendo os pedaços antes? É o jeito do
-         Factorio: clicou na mineradora, o jogo faz a engrenagem e o
-         forno sozinho. */
-      var passos = pode ? null : PlayerLib.passosAntesDe(g.player, r);
-      var emCascata = !pode && !!passos;
+      var estados = PlayerLib.estadoDosIngredientes(g.player, r);
+      var daParaClicar = pode || PlayerLib.podeFabricarEmCascata(g.player, r);
 
       var linha = document.createElement('button');
-      linha.className = 'receita' + (pode || emCascata ? '' : ' bloqueada') +
-        (emCascata ? ' cascata' : '');
+      linha.className = 'receita' + (daParaClicar ? '' : ' bloqueada');
 
       var cv = document.createElement('canvas');
       cv.width = 32; cv.height = 32;
@@ -690,18 +703,13 @@
       var custos = [];
       for (var item in r.custo) {
         var tem = Inv.conta(g.player.inv, item);
-        var falta = tem < r.custo[item];
-        custos.push('<i class="' + (falta ? 'falta' : '') + '">' +
+        var cor = CORES_INGREDIENTE[estados[item]] || CORES_INGREDIENTE.falta;
+        custos.push('<i class="' + cor.classe + '" title="' + D.itemNome(item) +
+          ': ' + cor.dica + '">' +
           D.itemNome(item) + ' ' + tem + '/' + r.custo[item] + '</i>');
       }
-      var extra = '';
-      if (emCascata) {
-        extra = '<em class="antes">faz antes: ' + passos.map(function (x) {
-          return D.itemNome(x.item) + (x.n > 1 ? ' ×' + x.n : '');
-        }).join(', ') + '</em>';
-      }
       txt.innerHTML = '<b>' + D.itemNome(r.saida) + (r.qtd > 1 ? ' ×' + r.qtd : '') + '</b>' +
-        '<small>' + custos.join(' · ') + '</small>' + extra;
+        '<small>' + custos.join(' · ') + '</small>';
       linha.appendChild(txt);
 
       linha.addEventListener('click', function (ev) {
@@ -717,11 +725,6 @@
           if (feitos === 0) {
             flash('Faltam materiais para ' + D.itemNome(r.saida));
           }
-        }
-        if (feitos > 0 && emCascata) {
-          flash('Fazendo os pedaços antes: ' + passos.map(function (x) {
-            return D.itemNome(x.item);
-          }).join(', '));
         }
         atualizar();
       });
