@@ -87,3 +87,50 @@ depois. Ficou o galho `backup-antes-da-cirurgia` apontando para o commit velho.
 **A lição:** "não commitar" não garante que nada seja commitado, porque outra sessão
 pode varrer meu trabalho. Ao terminar, conferir `git log` e `git status` — se o que
 editei não aparece como modificado, alguém já commitou.
+
+---
+
+# 09/09/2026 — o carvão, e o jogo finalmente subiu
+
+## O carvão
+
+Chegou quase limpo: 32×32, margens 2/2/3/3, nenhum pixel semitransparente, e das
+7 cores **6 eram exatamente a paleta do carvão**. Sobrou um `#5A6A65` esverdeado
+em (28,7) — resto da imagem de referência por baixo. Puxado para `#505B60`.
+
+Vale registrar a curva: a engrenagem chegou com **26 cores e 31 pixels** fora da
+paleta; o pedregulho, com 2; o carvão, com 1. Ele pegou o jeito de conferir no
+"Current colors" do Piskel antes de mandar.
+
+Virou `assets/items/coal.png`, e o `.piskel` foi para `assets/_piskel/`.
+
+## O jogo subiu — 20 commits de uma vez
+
+Ele perguntou se, chegando em outro computador e pegando o que está no GitHub,
+conseguiria continuar de onde paramos. A resposta tinha duas partes, e as duas
+importam:
+
+**1. `commit` não manda nada para a nuvem.** Commit guarda neste computador;
+quem envia é o `push`. Como a regra dele é "só quando eu pedir", havia **20
+commits parados** e o GitHub estava em `61f7ab4`, de **22/08** — sem
+eletricidade, sem as cores e sem nenhuma arte dele.
+
+**2. A partida não viaja, mesmo com o push.** Os saves ficam no `localStorage`
+do navegador (5 slots, `src/js/core/saves.js`), não são arquivos da pasta. O Git
+não os vê. Em outro computador ele teria o mesmo jogo com os **5 slots vazios**.
+**Não existe exportar/importar save** — ficou de decidir se quer que eu faça.
+
+Ele mandou enviar tudo, porque **o pai dele quer ver o jogo**. Push feito:
+`61f7ab4..515ed9a`. E a regra ficou: quando ele pedir para enviar, sobe o jogo
+inteiro, sem escolher pedaços.
+
+## Uma correção: o repositório é público
+
+A memória dizia "repositório privado" desde 22/08. Conferido com `gh api`:
+`"private": false`. Está **público** — qualquer um com o link vê o código. Isso
+ajuda no caso do pai dele, mas ele precisa saber que é assim.
+
+O **GitHub Pages não está ligado** (`has_pages: false`). Como o jogo é HTML e JS
+puros e já abre por duplo clique, ele funcionaria em Pages sem mudar nada — daria
+um link para o pai dele clicar e jogar, em vez de baixar um ZIP. Não liguei:
+publicar é decisão dele.
