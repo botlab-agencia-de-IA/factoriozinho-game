@@ -21,11 +21,11 @@
   };
 
   var TERRAIN_INFO = [
-    { id: 0, key: 'water',        nome: 'Água',          cor: '#2b5d78', cor2: '#356e8c', solido: true  },
-    { id: 1, key: 'sand',         nome: 'Areia',         cor: '#c9b27a', cor2: '#d6c08a', solido: false },
-    { id: 2, key: 'grass',        nome: 'Grama',         cor: '#4a7c3f', cor2: '#548a47', solido: false },
-    { id: 3, key: 'grass_dark',   nome: 'Mato',          cor: '#3d6a35', cor2: '#47773d', solido: false },
-    { id: 4, key: 'dirt',         nome: 'Terra',         cor: '#6b5334', cor2: '#775c3b', solido: false },
+    { id: 0, key: 'water',        nome: 'Água',          cor: '#3E9BBD', cor2: '#54ACC9', solido: true  },
+    { id: 1, key: 'sand',         nome: 'Areia',         cor: '#D7B96E', cor2: '#DEC37C', solido: false },
+    { id: 2, key: 'grass',        nome: 'Grama',         cor: '#5EAA4B', cor2: '#6DB552', solido: false },
+    { id: 3, key: 'grass_dark',   nome: 'Mato',          cor: '#426D38', cor2: '#4B773C', solido: false },
+    { id: 4, key: 'dirt',         nome: 'Terra',         cor: '#8F5D38', cor2: '#9D6A3F', solido: false },
     { id: 5, key: 'stone_ground', nome: 'Chão de pedra', cor: '#5c6068', cor2: '#666b73', solido: false },
     { id: 6, key: 'void',         nome: 'Fim do mundo',  cor: '#0a0b0d', cor2: '#15171b', solido: true  }
   ];
@@ -59,11 +59,11 @@
     { id: 5,  key: 'copper',  nome: 'Jazida de cobre',     item: 'copper_ore',  tempo: 1.20, bloqueia: false, emCima: true,  mao: true,  sprite: 'tiles/ore_copper',  cor: '#b3603f' },
     { id: 6,  key: 'stone',   nome: 'Jazida de pedra',     item: 'stone',       tempo: 1.00, bloqueia: false, emCima: true,  mao: true,  sprite: 'tiles/ore_stone',   cor: '#8a8f98' },
     { id: 7,  key: 'gold',    nome: 'Jazida de ouro',      item: 'gold_ore',    tempo: 1.60, bloqueia: false, emCima: true,  mao: true,  sprite: 'tiles/ore_gold',    cor: '#d4a017' },
-    { id: 8,  key: 'uranium', nome: 'Jazida de urânio',    item: 'uranium_ore', tempo: 2.20, bloqueia: false, emCima: true,  mao: true,  sprite: 'tiles/ore_uranium', cor: '#5fd45f' },
-    { id: 9,  key: 'clay',    nome: 'Depósito de argila',  item: 'clay',        tempo: 0.80, bloqueia: false, emCima: true,  mao: true,  sprite: 'tiles/ore_clay',    cor: '#a8674a' },
-    { id: 10, key: 'sand',    nome: 'Depósito de areia',   item: 'sand',        tempo: 0.70, bloqueia: false, emCima: true,  mao: true,  sprite: 'tiles/ore_sand',    cor: '#e0cb92' },
-    { id: 11, key: 'soil',    nome: 'Depósito de terra',   item: 'soil',        tempo: 0.70, bloqueia: false, emCima: true,  mao: true,  sprite: 'tiles/ore_soil',    cor: '#7a5a38' },
-    { id: 12, key: 'oil',     nome: 'Poço de petróleo',    item: 'crude_oil',   tempo: 3.00, bloqueia: false, emCima: true,  mao: false, sprite: 'tiles/ore_oil',     cor: '#1f2026',
+    { id: 8,  key: 'uranium', nome: 'Jazida de urânio',    item: 'uranium_ore', tempo: 2.20, bloqueia: false, emCima: true,  mao: true,  sprite: 'tiles/ore_uranium', cor: '#3F8B35' },
+    { id: 9,  key: 'clay',    nome: 'Depósito de argila',  item: 'clay',        tempo: 0.80, bloqueia: false, emCima: true,  mao: true,  sprite: 'tiles/ore_clay',    cor: '#B96949' },
+    { id: 10, key: 'sand',    nome: 'Depósito de areia',   item: 'sand',        tempo: 0.70, bloqueia: false, emCima: true,  mao: true,  sprite: 'tiles/ore_sand',    cor: '#95723D' },
+    { id: 11, key: 'soil',    nome: 'Depósito de terra',   item: 'soil',        tempo: 0.70, bloqueia: false, emCima: true,  mao: true,  sprite: 'tiles/ore_soil',    cor: '#643A29' },
+    { id: 12, key: 'oil',     nome: 'Poço de petróleo',    item: 'crude_oil',   tempo: 3.00, bloqueia: false, emCima: true,  mao: false, sprite: 'tiles/ore_oil',     cor: '#2C3E54',
       aviso: 'Precisa de bomba de petróleo — ainda não existe.' }
   ];
 
@@ -82,17 +82,17 @@
     iron_ore:    { nome: 'Minério de ferro',     stack: STACK, cor: '#8d97a5', forma: 'pedra' },
     copper_ore:  { nome: 'Minério de cobre',     stack: STACK, cor: '#b3603f', forma: 'pedra' },
     gold_ore:    { nome: 'Minério de ouro',      stack: STACK, cor: '#d4a017', forma: 'pedra' },
-    uranium_ore: { nome: 'Minério de urânio',    stack: STACK, cor: '#5fd45f', forma: 'pedra' },
-    clay:        { nome: 'Argila',               stack: STACK, cor: '#a8674a', forma: 'pedra' },
-    sand:        { nome: 'Areia',                stack: STACK, cor: '#d9c48a', forma: 'po' },
-    soil:        { nome: 'Terra',                stack: STACK, cor: '#6b4f34', forma: 'po' },
-    crude_oil:   { nome: 'Petróleo bruto',       stack: STACK, fuel: 60, cor: '#25262c', forma: 'po' },
+    uranium_ore: { nome: 'Minério de urânio',    stack: STACK, cor: '#3F8B35', forma: 'pedra' },
+    clay:        { nome: 'Argila',               stack: STACK, cor: '#B96949', forma: 'pedra' },
+    sand:        { nome: 'Areia',                stack: STACK, cor: '#95723D', forma: 'po' },
+    soil:        { nome: 'Terra',                stack: STACK, cor: '#643A29', forma: 'po' },
+    crude_oil:   { nome: 'Petróleo bruto',       stack: STACK, fuel: 60, cor: '#2C3E54', forma: 'po' },
 
     /* --- processados --- */
     iron_plate:  { nome: 'Placa de ferro',       stack: STACK, cor: '#b6bec8', forma: 'placa' },
     copper_plate:{ nome: 'Placa de cobre',       stack: STACK, cor: '#e08a5a', forma: 'placa' },
     gold_plate:  { nome: 'Placa de ouro',        stack: STACK, cor: '#f0c850', forma: 'placa' },
-    glass:       { nome: 'Vidro',                stack: STACK, cor: '#a8d8e8', forma: 'placa' },
+    glass:       { nome: 'Vidro',                stack: STACK, cor: '#6FBCC6', forma: 'placa' },
     stone_brick: { nome: 'Tijolo de pedra',      stack: STACK, cor: '#8a8f98', forma: 'tijolo' },
     iron_gear:   { nome: 'Engrenagem de ferro',  stack: STACK, cor: '#98a2ad', forma: 'engrenagem' },
 

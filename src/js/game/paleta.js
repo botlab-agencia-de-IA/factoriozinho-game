@@ -57,19 +57,26 @@
     gold_ore:     ['#C99A2D', '#F2CB55', '#8A651E', '#FFE38A', '#5F4614'],
     gold_plate:   ['#F2CB55', '#FFE38A', '#C99A2D', '#FFF8CF', '#8A651E'],
 
-    /* ---------- URÂNIO ---------- (ainda a definir pelo Vandré) */
-    uranium_ore:  ['#4aab4a', '#6fd46f', '#2f7a2f', '#9bec9b', '#1d521d'],
+    /* ---------- URÂNIO ----------  minério: o Vandré pediu massa em #3F8B35 */
+    uranium_ore:  ['#3F8B35', '#73C94B', '#215427', '#B5ED75', '#183D1C'],
 
-    /* ---------- AREIA E VIDRO ---------- (ainda a definir) */
-    sand:         ['#d9c48a', '#eddda9', '#ad9a63', '#f7eec9', '#87764a'],
-    glass:        ['#a8d8e8', '#cdeef8', '#7aacbd', '#e8f8ff', '#5a8494'],
+    /* ---------- AREIA E VIDRO ----------
+       areia: ele pediu que até o ícone de inventário use a SOMBRA como base
+       vidro: superfície na cor piloto, borda e reflexo no branco */
+    sand:         ['#95723D', '#C9A45D', '#624827', '#ECD18B', '#48351C'],
+    glass:        ['#6FBCC6', '#B6E8ED', '#41818F', '#F4FFFF', '#28525E'],
 
-    /* ---------- TERRA E ARGILA ---------- (ainda a definir) */
-    soil:         ['#6b4f34', '#87684a', '#4c3722', '#a5855f', '#332314'],
-    clay:         ['#a8674a', '#c48466', '#7d4a33', '#dba488', '#5a3323'],
+    /* ---------- TERRA E ARGILA ----------
+       terra: massa em #643A29, senão fica igual ao chão de terra
+       argila: essa fica na cor piloto mesmo, com luz em cima */
+    soil:         ['#643A29', '#965A34', '#43281F', '#C58A51', '#311D17'],
+    clay:         ['#B96949', '#D9956A', '#823F32', '#F6C49C', '#552B28'],
 
-    /* ---------- PETRÓLEO ---------- (ainda a definir) */
-    crude_oil:    ['#25262c', '#3b3d46', '#131418', '#565a66', '#08090b'],
+    /* ---------- PETRÓLEO ----------  azul-noturno, separado do carvão */
+    crude_oil:    ['#2C3E54', '#485D72', '#19283D', '#71879B', '#0D1526'],
+
+    /* DIAMANTE já tem cor escolhida no documentos/CORES.md
+       (#56C5E6 e família), mas ainda não existe item no jogo. */
 
     /* ---------- FERRAMENTAS ----------
        usam a tonalidade da barra do material (regra da família) */
@@ -96,14 +103,14 @@
   };
 
   /* ============================================================
-     TERRENO (o chão e o mapa) — ainda a definir pelo Vandré
+     TERRENO (o chão e o mapa)
      ============================================================ */
   var TERRENO = {
-    water:        ['#2b5d78', '#3d7a9a', '#1e4657', '#589cbd', '#132f3b'],
-    sand:         ['#c9b27a', '#dcc691', '#a68f5c', '#eeddb0', '#7f6c44'],
-    grass:        ['#4a7c3f', '#5f9950', '#375c2e', '#79b767', '#26401f'],
-    grass_dark:   ['#3d6a35', '#4f8544', '#2c4d26', '#66a259', '#1e3619'],
-    dirt:         ['#6b5334', '#856a47', '#4d3b24', '#a08558', '#332614'],
+    water:        ['#3E9BBD', '#87D5E6', '#23668B', '#D5F7FF', '#173C61'],
+    sand:         ['#D7B96E', '#EED99B', '#AD884C', '#FFF2C5', '#735B34'],
+    grass:        ['#5EAA4B', '#8FCE61', '#397A3B', '#BDEB83', '#244D31'],
+    grass_dark:   ['#426D38', '#618F45', '#2D4D31', '#8EBE62', '#1F3527'],
+    dirt:         ['#8F5D38', '#BD894F', '#603A29', '#E2B978', '#42271F'],
     stone_ground: ['#5C6068', '#78838C', '#35404A', '#A7B2B8', '#22292E'],
     void:         ['#0a0b0d', '#15171b', '#000000', '#20242a', '#000000']
   };
@@ -118,11 +125,11 @@
     copper:  ['#913E2C', '#C66A3D', '#612D24', '#E69A60', '#451F19'],
     stone:   ['#78838C', '#A7B2B8', '#515D66', '#D2DADF', '#35404A'],
     gold:    ['#C99A2D', '#F2CB55', '#8A651E', '#FFE38A', '#5F4614'],
-    uranium: ['#4aab4a', '#6fd46f', '#2f7a2f', '#9bec9b', '#1d521d'],
-    clay:    ['#a8674a', '#c48466', '#7d4a33', '#dba488', '#5a3323'],
-    sand:    ['#e0cb92', '#f2e2b0', '#b3a26f', '#f9f0d4', '#8d7d52'],
-    soil:    ['#7a5a38', '#96734d', '#5a4126', '#b4926a', '#3d2b17'],
-    oil:     ['#1f2026', '#34363e', '#0e0f12', '#4e515c', '#050506'],
+    uranium: ['#3F8B35', '#73C94B', '#215427', '#B5ED75', '#183D1C'],
+    clay:    ['#B96949', '#D9956A', '#823F32', '#F6C49C', '#552B28'],
+    sand:    ['#95723D', '#C9A45D', '#624827', '#ECD18B', '#48351C'],
+    soil:    ['#643A29', '#965A34', '#43281F', '#C58A51', '#311D17'],
+    oil:     ['#2C3E54', '#485D72', '#19283D', '#71879B', '#0D1526'],
     tree:    ['#2f5a28', '#457f39', '#1e3d1a', '#5b9e4c', '#132a11'],
     rock:    ['#78838C', '#A7B2B8', '#515D66', '#D2DADF', '#35404A']
   };

@@ -169,20 +169,18 @@ Marque conforme for fazendo. **O nome tem que ser exatamente esse.**
 
 ---
 
-## 🎨 Sugestão de paleta
+## 🎨 A paleta
 
-Pixel art fica melhor com poucas cores. Uma paleta enxuta para o clima industrial:
+As cores **não moram aqui** — elas estão em [`documentos/CORES.md`](../documentos/CORES.md),
+que é o arquivo oficial e já está ligado ao jogo (`src/js/game/paleta.js`).
 
-| Cor | Hex | Onde usar |
-|---|---|---|
-| ⬛ Contorno | `#1a1a20` | contorno de tudo |
-| 🟫 Madeira | `#8a5a34` / `#c07a4a` | troncos, baú |
-| ⬜ Pedra | `#6b7280` / `#9aa3af` | pedregulho, tijolo |
-| ⬛ Carvão | `#2b2f36` / `#454b55` | carvão |
-| 🟧 Cobre | `#b3603f` / `#e08a5a` | cobre |
-| ⬜ Ferro | `#7e8791` / `#b6bec8` | ferro |
-| 🟩 Grama | `#4a7c3f` / `#5f9950` | chão |
-| 🟨 Metal quente | `#ff9b2b` / `#ffc857` | fogo, brilho de máquina |
+Cada material tem **5 tons** (brilho, luz, cor piloto, sombra, sombra profunda) e o
+contorno de tudo é `#000000`. Ao desenhar, use **só esses 6 valores** — nada de tom
+intermediário, nada de resto de imagem de referência.
+
+> 💡 No Piskel, o painel de paleta tem a opção **"Current colors"**. Se aparecer mais
+> de 6 quadradinhos, sobrou cor de fora da paleta no desenho.
+
 
 ---
 

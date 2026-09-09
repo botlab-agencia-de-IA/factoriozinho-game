@@ -27,4 +27,5 @@ A memória guarda o caminho; o GDD guarda o destino.
 
 | Data | Conversa |
 |---|---|
+| 08/09/2026 | [As cores que faltavam](2026-09-08-as-cores-que-faltavam.md) — urânio, diamante, areia, vidro, argila, terra, petróleo e o terreno inteiro |
 | 08/09/2026 | [A arte do Vandré entra no jogo](2026-09-08-arte-entra-no-jogo.md) — fluxo do Piskel, madeira, metais e engrenagem |

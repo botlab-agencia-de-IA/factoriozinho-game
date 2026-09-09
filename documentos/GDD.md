@@ -4,7 +4,7 @@
 > reescrever à vontade — eu leio este arquivo antes de mexer no código. Se algo
 > aqui estiver diferente do jogo, o arquivo ganha.
 >
-> Última atualização: 08/09/2026 · Versão do doc: **0.9.2** · Jogo: **v0.9.2**
+> Última atualização: 08/09/2026 · Versão do doc: **0.9.3** · Jogo: **v0.9.3**
 >
 > 📦 Código no GitHub: **botlab-agencia-de-IA/factoriozinho-game** (privado)
 > 🧪 Para testar sem abrir o jogo: duplo clique no `testar.bat`
@@ -736,7 +736,7 @@ antes, porque ele costuma testar e trazer ajustes primeiro.
 
 Na fila, na ordem que ele definiu: progressão de picaretas (§3.1) → matemática do
 jogo (§3.2) → diamante → sobrevivência. Os problemas conhecidos estão em §8.5, e as
-cores que faltam estão no `CORES.md`.
+cores que faltam estão no `CORES.md` — hoje só falta a folhagem da árvore.
 
 ---
 
@@ -744,6 +744,7 @@ cores que faltam estão no `CORES.md`.
 
 | Data | O que mudou |
 |---|---|
+| 08/09/2026 | **v0.9.3** — **As cores que faltavam entraram**, trazidas por ele: urânio, diamante, areia (recurso), vidro, argila, terra (recurso), petróleo, e o terreno inteiro — grama, mato, terra de chão, areia de chão e água. Cada uma com os 5 tons de sempre, mais a **direção visual e a aplicação** de cada material, agora guardadas junto no `CORES.md` (é a instrução de como desenhar, vale tanto quanto o hex). Onde ele mandou, a base da paleta é a **sombra** e não a cor piloto: **urânio, areia e terra** são recurso bruto e ficariam claros demais — a terra, em especial, era quase idêntica ao chão de terra. Argila, vidro e petróleo ficaram na cor piloto, como ele pediu. A tabela de paleta antiga do `assets/LEIA-ME.md` foi apagada: ela tinha o contorno errado (`#1a1a20`) e concorria com o `CORES.md`, que é quem manda. **Falta só a folhagem da árvore.** O diamante tem cor escolhida mas ainda não tem item no jogo. |
 | 08/09/2026 | **v0.9.2** — Ajustes do teste dele na eletricidade. **Não dava para pôr carvão nem madeira no gerador**: a função que decide para qual slot da máquina vai o item na mão (`slotDestinoNaMaquina`) não conhecia o tipo `generator` e devolvia "não serve" — nem clicando na máquina no mundo, nem com shift+clique no painel. **A lista de fabricação mudou de regra** (§5.8): mostra **só os ingredientes diretos** da receita, sem a linha "faz antes", e a cor de cada um conta a história — **normal** já tem, **amarelo** falta mas dá para fabricar (o clique faz sozinho), **vermelho** falta e não há como fazer. A conta é real, feita pelo mesmo planejamento da fabricação em escada: 5 engrenagens com 9 chapas de ferro dá vermelho, porque 5 engrenagens custam 10 chapas. Vale para todo item novo que entrar. |
 | 08/09/2026 | **v0.9.1** — **A eletricidade entrou**, com os números dele (`MATEMATICA.md` §6). A unidade é o **watt**. **Gerador a carvão** (2×2): queima carvão ou madeira e põe **100 W** na rede — e **só queima o que a rede usa**, então rede parada não come carvão; a plena carga são 2 carvões/min, a mesma medida de sempre. **Poste elétrico** (1×1, 2 madeiras + 1 fio de cobre): atende **5×5** com ele no meio e liga em outro poste a até **7 quadrados** de centro a centro — a conta dele: 5 + 2 de vão + 5 = 12 de ponta a ponta. A rede segue de poste em poste, e o **fio é desenhado** entre eles (amarelo com energia, cinza sem). Com o poste na mão aparecem a zona 5×5 e o risco até os postes que ele alcançaria dali. **Inseridor elétrico** (vermelho, escolha dele): 1 engrenagem + 1 circuito + 1 chapa, **bebe 5 W**, não come nada — e é **seis vezes mais barato em carvão** que o a combustível, que é o que paga a eletricidade. **Falta energia? Ninguém para**: todos andam mais devagar na mesma proporção, como no Factorio. Itens novos: **fio de cobre** (1 chapa de cobre → 2 fios) e **circuito eletrônico** (2 fios + 1 chapa de ferro). Novo módulo `src/js/game/energia.js` e o teste `19-energia.js`. |
 | 08/09/2026 | **v0.9.0** — Pedidos dele antes da energia. **A mochila é a mesma em toda janela**: abrir um baú, um forno ou uma mineradora mostra a mochila de sempre embaixo — com o botão Organizar, a escolha de ordem e a barra rápida separada — e não mais uma grade solta de 40 slots. **Baú de ferro**: 5 placas de ferro, **24 pilhas** (oito a mais que o de madeira). E ficaram **registradas as decisões da eletricidade** (`MATEMATICA.md` §6), que é o que vem em seguida: gerador a combustão que aceita carvão e madeira, fio de cobre (1 chapa → 2 fios), poste de 2 madeiras + 1 fio, zona 5×5 com o poste no meio, **alcance de fio de 7 quadrados** (5 + 2 de vão + 5 = 12 de ponta a ponta), a rede seguindo de poste em poste, e as versões a combustão convivendo com as elétricas. |

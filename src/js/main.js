@@ -5,7 +5,7 @@
 (function (global) {
   'use strict';
 
-  var VERSION = '0.9.2';
+  var VERSION = '0.9.3';
   var PHASE = 'Fase 4 — a eletricidade, ajustada';
 
   function boot() {
