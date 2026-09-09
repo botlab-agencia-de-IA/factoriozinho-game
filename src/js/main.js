@@ -5,8 +5,8 @@
 (function (global) {
   'use strict';
 
-  var VERSION = '0.8.9';
-  var PHASE = 'Fase 2 — mochila arrumada e fabricação em escada';
+  var VERSION = '0.9.0';
+  var PHASE = 'Fase 2 — a mesma mochila em toda janela';
 
   function boot() {
     global.FZ.Settings.load();

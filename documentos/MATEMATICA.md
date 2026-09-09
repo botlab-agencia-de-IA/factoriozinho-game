@@ -105,13 +105,56 @@ Uma mineradora de ferro → esteira → inseridor → fornalha → inseridor →
 
 ---
 
-## 6. O que ainda falta decidir
+## 6. A eletricidade — decidido e a decidir
 
-1. **A mineradora elétrica** (Fase 4) está definida em 50/min = 2,5 fornalhas, mas
-   falta dizer **quanta energia** ela gasta.
-2. **A montadora** (Fase 3) ainda não tem tempo definido. A pergunta é quantas
+Decidido por ele em **08/09/2026**, junto com o pedido da era da eletricidade:
+
+- **As duas linhas convivem.** O forno de pedra, a mineradora a carvão e o inseridor
+  a combustível **continuam existindo**. A eletricidade traz as versões elétricas ao
+  lado deles — forno elétrico, inseridor elétrico, montadora — como no Factorio.
+- **Gerador a combustão**: uma estrutura só, que aceita **carvão e madeira**, usando
+  a tabela de queima da §3 (1 carvão = 30 s, 1 madeira = 10 s).
+- **Base para começar: o gerador a combustão produz 100.** É um número redondo só
+  para ter de onde partir; o consumo de cada máquina sai depois, a partir dele.
+
+### A rede, em números (decidido)
+
+| Coisa | Número |
+|---|---|
+| **Zona de atuação do poste** | **5×5**, com o poste no quadrado do meio |
+| **Alcance de fio entre dois postes** | **7 quadrados**, de centro a centro |
+| De onde saem os 7 | 5 da zona de um + **2 de vão** + 5 da zona do outro = **12 quadrados** de ponta a ponta. Do centro de um ao centro do outro dá 7 |
+| Mais perto que isso | vale — dois postes podem até ficar colados |
+| Ligação | todo poste dentro do alcance se liga, e a rede segue de poste em poste |
+| **Fio de cobre** | 1 chapa de cobre → **2 fios** (a mesma proporção da engrenagem) |
+| **Poste elétrico** | **2 madeiras + 1 fio de cobre** |
+| Máquina ligada | quando estiver **dentro da zona 5×5** de algum poste da rede |
+| Energia da água | fica para quando houver fluidos |
+
+```
+        zona do poste A          vão         zona do poste B
+     ┌───────────────────┐    ┌───────┐   ┌───────────────────┐
+     │  ·   ·   ·   ·   ·│    │   ·   │   │·   ·   ·   ·   ·  │
+     │  ·   ·   A   ·   ·│    │   ·   │   │·   ·   B   ·   ·  │
+     │  ·   ·   ·   ·   ·│    │   ·   │   │·   ·   ·   ·   ·  │
+     └───────────────────┘    └───────┘   └───────────────────┘
+        5 quadrados             2              5 quadrados
+     └──────────────────── 12 de ponta a ponta ──────────────────┘
+                    de A até B: 7 quadrados
+```
+
+### O que falta decidir
+
+1. **A unidade de energia.** Watt, megawatt, ou um nome próprio do jogo? Muda só o
+   texto na tela, mas é melhor escolher antes de escrever em dez lugares.
+2. **Quanto cada máquina consome.** A partir dos 100 do gerador: quantas fornalhas
+   elétricas um gerador sustenta? E quantos inseridores? É a mesma pergunta que a
+   §1 respondeu para o carvão ("1 mineradora = 1,5 fornalhas"), agora para a energia.
+3. **A mineradora elétrica** já está definida em 50/min = 2,5 fornalhas (§2), mas
+   falta o consumo dela.
+4. **A montadora** (Fase 3) ainda não tem tempo definido. A pergunta é quantas
    engrenagens por minuto ela faz — e daí sai quantas fornalhas ela consome.
-3. **Madeira como combustível de emergência**: hoje três madeiras valem um carvão.
+5. **Madeira como combustível de emergência**: hoje três madeiras valem um carvão.
    Se quiser que a madeira seja só para o comecinho, é só baixar para 5 s.
 
 ---

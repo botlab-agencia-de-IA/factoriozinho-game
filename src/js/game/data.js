@@ -108,6 +108,7 @@
     stone_furnace:{ nome: 'Forno de pedra',      stack: STACK, constroi: 'stone_furnace', cor: '#7d8390', forma: 'predio' },
     burner_drill: { nome: 'Mineradora a carvão', stack: STACK, constroi: 'burner_drill',  cor: '#c98a3a', forma: 'predio' },
     wooden_chest: { nome: 'Baú de madeira',      stack: STACK, constroi: 'wooden_chest',  cor: '#a06a3c', forma: 'predio' },
+    iron_chest:   { nome: 'Baú de ferro',        stack: STACK, constroi: 'iron_chest',    cor: '#8e99a5', forma: 'predio' },
     transport_belt:{ nome: 'Esteira',            stack: STACK, constroi: 'transport_belt', cor: '#6b7280', forma: 'esteira' },
     inserter:     { nome: 'Inseridor',           stack: STACK, constroi: 'inserter',      cor: '#c4a33a', forma: 'braco' }
   };
@@ -128,6 +129,7 @@
     { saida: 'gold_pickaxe',   qtd: 1, tempo: 2.0, cat: 'ferramenta', custo: { wood: 2, gold_plate: 3 } },
     { saida: 'stone_furnace',  qtd: 1, tempo: 1.0, cat: 'estrutura',  custo: { stone: 5 } },
     { saida: 'wooden_chest',   qtd: 1, tempo: 0.5, cat: 'estrutura',  custo: { wood: 4 } },
+    { saida: 'iron_chest',     qtd: 1, tempo: 1.0, cat: 'estrutura',  custo: { iron_plate: 5 } },
     { saida: 'burner_drill',   qtd: 1, tempo: 2.0, cat: 'estrutura',  custo: { iron_gear: 3, iron_plate: 3, stone_furnace: 1 } },
     { saida: 'transport_belt', qtd: 2, tempo: 0.5, cat: 'estrutura',  custo: { iron_gear: 1, iron_plate: 1 } },
     { saida: 'inserter',       qtd: 1, tempo: 0.5, cat: 'estrutura',  custo: { iron_gear: 1, iron_plate: 1, copper_plate: 1 } },
@@ -184,6 +186,15 @@
       slots: { geral: 16 },
       cor: '#8a5a34', cor2: '#6d4728',
       dica: 'Guarda 16 pilhas de itens.'
+    },
+    iron_chest: {
+      nome: 'Baú de ferro',
+      tipo: 'chest',
+      w: 1, h: 1,
+      giravel: false,
+      slots: { geral: 24 },      // 8 a mais que o de madeira
+      cor: '#7e8791', cor2: '#5d656e',
+      dica: 'Guarda 24 pilhas — oito a mais que o baú de madeira.'
     },
     transport_belt: {
       nome: 'Esteira',

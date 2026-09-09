@@ -82,6 +82,7 @@
     stone_furnace:  ['#78838C', '#A7B2B8', '#515D66', '#D2DADF', '#35404A'],
     burner_drill:   ['#A9BEC7', '#D4E3E7', '#788F99', '#F2FAF8', '#526873'],
     wooden_chest:   ['#A86532', '#D69A58', '#784321', '#F0C27A', '#51301E'],
+    iron_chest:     ['#7E8791', '#B6BEC8', '#5D656E', '#DCE3EA', '#3E454D'],
     transport_belt: ['#515D66', '#78838C', '#35404A', '#A7B2B8', '#22292E'],
     inserter:       ['#C99A2D', '#F2CB55', '#8A651E', '#FFE38A', '#5F4614']
   };

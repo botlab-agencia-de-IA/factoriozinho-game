@@ -27,7 +27,7 @@
     'items/crude_oil',
     'items/iron_plate', 'items/copper_plate', 'items/gold_plate', 'items/glass',
     'items/stone_brick', 'items/iron_gear',
-    'items/stone_furnace', 'items/burner_drill', 'items/wooden_chest',
+    'items/stone_furnace', 'items/burner_drill', 'items/wooden_chest', 'items/iron_chest',
     'items/transport_belt', 'items/inserter',
     // ferramentas (arte do Vandré)
     'items/wood_pickaxe', 'items/stone_pickaxe', 'items/iron_pickaxe', 'items/gold_pickaxe',
@@ -35,6 +35,7 @@
     'buildings/stone_furnace',  // 64x64
     'buildings/burner_drill',   // 64x64
     'buildings/wooden_chest',   // 32x32
+    'buildings/iron_chest',     // 32x32
     'buildings/transport_belt', // 32x32
     'buildings/inserter',       // 32x32
     // personagem

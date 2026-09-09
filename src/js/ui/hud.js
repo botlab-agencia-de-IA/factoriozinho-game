@@ -545,27 +545,7 @@
        teclas 1 a 8 pegam, e é por isso que organizar não mexe neles. */
     var esq = document.createElement('div');
     esq.className = 'inv-lado';
-    esq.appendChild(cabecalhoDaMochila());
-
-    var grade = document.createElement('div');
-    grade.className = 'grade-inv';
-    for (var i = C.HOTBAR_SIZE; i < C.INV_SIZE; i++) {
-      grade.appendChild(criarSlot({ slots: g.player.inv, i: i, contexto: 'inv' }));
-    }
-    esq.appendChild(grade);
-
-    var barra = document.createElement('div');
-    barra.className = 'inv-barra';
-    barra.innerHTML = '<span>Barra rápida — teclas 1 a ' + C.HOTBAR_SIZE + '</span>';
-    var gradeBarra = document.createElement('div');
-    gradeBarra.className = 'grade-inv';
-    for (var h = 0; h < C.HOTBAR_SIZE; h++) {
-      gradeBarra.appendChild(criarSlot({
-        slots: g.player.inv, i: h, contexto: 'inv', hotbar: h + 1
-      }));
-    }
-    barra.appendChild(gradeBarra);
-    esq.appendChild(barra);
+    montarMochilaEm(esq, 'Inventário');
 
     // direita: fabricação
     var dir = document.createElement('div');
@@ -586,13 +566,44 @@
     atualizar();
   }
 
+  /* A mochila do jogador, montada sempre igual: título com o botão de
+     organizar, a grade, e a barra rápida separada embaixo com as teclas
+     escritas. Isso aparece na mochila E em todo painel de máquina — ele
+     pediu que abrir um baú, um forno ou uma mineradora mostrasse a mesma
+     mochila de sempre, e não uma grade solta com cara de outra coisa.
+     @param titulo o que vai escrito em cima */
+  function montarMochilaEm(pai, titulo) {
+    pai.appendChild(cabecalhoDaMochila(titulo));
+
+    var grade = document.createElement('div');
+    grade.className = 'grade-inv';
+    for (var i = C.HOTBAR_SIZE; i < C.INV_SIZE; i++) {
+      grade.appendChild(criarSlot({ slots: g.player.inv, i: i, contexto: 'inv' }));
+    }
+    pai.appendChild(grade);
+
+    var barra = document.createElement('div');
+    barra.className = 'inv-barra';
+    barra.innerHTML = '<span>Barra rápida — teclas 1 a ' + C.HOTBAR_SIZE + '</span>';
+    var gradeBarra = document.createElement('div');
+    gradeBarra.className = 'grade-inv';
+    for (var h = 0; h < C.HOTBAR_SIZE; h++) {
+      gradeBarra.appendChild(criarSlot({
+        slots: g.player.inv, i: h, contexto: 'inv', hotbar: h + 1
+      }));
+    }
+    barra.appendChild(gradeBarra);
+    pai.appendChild(barra);
+    return pai;
+  }
+
   /* Título da mochila com o botão de organizar e a escolha da ordem.
      A ordem fica guardada nas configurações: é ela que a roda do mouse
      usa quando ele organiza sem abrir isto aqui. */
-  function cabecalhoDaMochila() {
+  function cabecalhoDaMochila(titulo) {
     var h = document.createElement('h4');
     h.className = 'inv-topo';
-    h.innerHTML = '<span>Inventário</span>' +
+    h.innerHTML = '<span>' + (titulo || 'Inventário') + '</span>' +
       '<span class="organizar">' +
         '<b id="btn-organizar" title="Ou aperte a roda do mouse em cima de qualquer slot">Organizar</b>' +
         '<select id="ordem-inv">' +
@@ -882,17 +893,11 @@
       corpo.appendChild(girar);
     }
 
-    // inventário do jogador embaixo, para transferir
-    var sep = document.createElement('h4');
-    sep.textContent = 'Sua mochila';
-    corpo.appendChild(sep);
-
-    var grade = document.createElement('div');
-    grade.className = 'grade-inv';
-    for (var k = 0; k < C.INV_SIZE; k++) {
-      grade.appendChild(criarSlot({ slots: g.player.inv, i: k, contexto: 'inv' }));
-    }
-    corpo.appendChild(grade);
+    // a mesma mochila de sempre embaixo, para transferir
+    var minha = document.createElement('div');
+    minha.className = 'inv-lado maq-mochila';
+    montarMochilaEm(minha, 'Sua mochila');
+    corpo.appendChild(minha);
 
     atualizar();
   }

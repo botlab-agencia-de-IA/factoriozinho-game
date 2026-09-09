@@ -140,6 +140,7 @@ Marque conforme for fazendo. **O nome tem que ser exatamente esse.**
 | `stone_furnace.png` | Ícone do forno de pedra |
 | `burner_drill.png` | Ícone da mineradora a carvão |
 | `wooden_chest.png` | Ícone do baú de madeira |
+| `iron_chest.png` | Ícone do baú de ferro |
 | `transport_belt.png` | Ícone da esteira |
 | `inserter.png` | Ícone do inseridor |
 
@@ -149,6 +150,7 @@ Marque conforme for fazendo. **O nome tem que ser exatamente esse.**
 | `stone_furnace.png` | `64×64` | Forno de pedra (2×2) |
 | `burner_drill.png` | `64×64` | Mineradora a carvão (2×2) |
 | `wooden_chest.png` | `32×32` | Baú de madeira (1×1) |
+| `iron_chest.png` | `32×32` | Baú de ferro (1×1) |
 | `transport_belt.png` | `32×32` | Esteira (1×1) — desenhe apontando **para cima**; o jogo gira sozinho |
 | `inserter.png` | `32×32` | Inseridor (1×1) — só a **base**, sem o braço; o braço é desenhado por cima e se mexe |
 
