@@ -554,9 +554,13 @@ O arquivo tem três tabelas: **ITENS** (o que vai na mochila), **TERRENO** (o ch
 ```
 factoriozinho/
 ├── index.html
-├── GDD.md
+├── README.md
+├── documentos/          # GDD.md, CORES.md, MATEMATICA.md
+├── memoria/             # o diário do projeto, uma conversa por arquivo
 ├── assets/              # a arte entra aqui (ver assets/LEIA-ME.md)
 │   ├── tiles/  items/  buildings/  player/
+│   ├── _piskel/         # os originais do Piskel (fonte da arte)
+│   └── _referencia/     # rascunhos meus, ponto de partida para desenhar
 └── src/
     ├── css/
     └── js/

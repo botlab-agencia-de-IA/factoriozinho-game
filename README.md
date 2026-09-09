@@ -47,10 +47,12 @@ servidor local com o Node e abre o jogo em `http://localhost:8080`).
 
 | Arquivo / pasta | Para que serve |
 |---|---|
-| **`GDD.md`** | **O documento de design — a fonte da verdade do projeto.** Tudo que foi decidido, cortado e o que falta fazer está aqui. |
-| **`CORES.md`** | A paleta de cores do jogo, preenchida à mão. As cores daqui vão para o `paleta.js`. |
-| **`MATEMATICA.md`** | Os números do jogo: o que cada máquina produz, come e queima, e a conta de quanto carvão a sua fábrica precisa. |
+| **`documentos/GDD.md`** | **O documento de design — a fonte da verdade do projeto.** Tudo que foi decidido, cortado e o que falta fazer está aqui. |
+| **`documentos/CORES.md`** | A paleta de cores do jogo, preenchida à mão. As cores daqui vão para o `paleta.js`. |
+| **`documentos/MATEMATICA.md`** | Os números do jogo: o que cada máquina produz, come e queima, e a conta de quanto carvão a sua fábrica precisa. |
 | **`assets/LEIA-ME.md`** | Como desenhar a arte: tamanho de cada grade, nome de cada arquivo. |
+| **`memoria/`** | O diário do projeto: o que foi combinado e feito em cada conversa. |
+| `assets/_piskel/` | Os arquivos originais do Piskel (o fonte da arte). |
 | `index.html` | O jogo. Abre com duplo clique. |
 | `assets/` | As artes em PNG. O que não existir aqui é desenhado por código. |
 | `src/js/game/` | O motor: mundo, entidades, render, dados. |
@@ -89,4 +91,4 @@ o que tem ali: o conteúdo da jazida, o que o forno está fundindo e em que pont
 o quanto a mineradora ainda tem para tirar.
 
 O roadmap completo, com o que já foi feito e o que vem a seguir, está no
-[`GDD.md`](GDD.md).
+[`documentos/GDD.md`](documentos/GDD.md).

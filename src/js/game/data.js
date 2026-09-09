@@ -145,7 +145,7 @@
 
   /* ---------------- receitas de fundição (forno) ---------------- */
   /* 3 s por peça = 20 por minuto. É o número em cima do qual a
-     matemática do jogo inteira foi montada (ver MATEMATICA.md).
+     matemática do jogo inteira foi montada (ver documentos/MATEMATICA.md).
      O ouro demora uma vez e meia. */
   var SMELTING = {
     iron_ore:   { saida: 'iron_plate',   qtd: 1, tempo: 3.0 },

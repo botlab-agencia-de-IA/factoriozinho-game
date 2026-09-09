@@ -4,7 +4,7 @@
 
    ESTE É O ARQUIVO DAS CORES. É só aqui que se mexe em cor.
 
-   As cores vêm do CORES.md, preenchido pelo Vandré.
+   As cores vêm do documentos/CORES.md, preenchido pelo Vandré.
    Cada item tem CINCO tons, sempre nesta ordem:
 
      [ 'BASE' , 'LUZ' , 'SOMBRA' , 'BRILHO' , 'SOMBRA PROFUNDA' ]
